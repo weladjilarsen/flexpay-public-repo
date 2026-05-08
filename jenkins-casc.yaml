@@ -20,34 +20,36 @@ jenkins:
               - "Job/Build"
               - "Job/Workspace"
 
+  # Note: Les variables ci-dessous (${GITHUB_TOKEN}, etc.) DOIVENT être 
+  # définies dans l'environnement du conteneur Jenkins pour fonctionner.
+
   # Configuration des credentials pour le pipeline
   # Note: Les valeurs sont injectées via variables d'environnement
   credentials:
     system:
       domainCredentials:
-        # Identifiants pour pousser sur Docker Hub
-        - usernamePassword:
-            scope: GLOBAL
-            id: "docker-hub-credentials"
-            username: "flexpay_admin"
-            password: "${DOCKER_HUB_PASSWORD}"
-            description: "Docker Hub Registry Credentials"
-
-        # Fichier Kubeconfig pour le déploiement K8s
-        - file:
-            scope: GLOBAL
-            id: "k8s-cluster-config"
-            fileName: "kubeconfig"
-            secretBytes: "${KUBECONFIG_CONTENT}"
-            description: "Kubernetes Cluster Configuration"
-
-        # Identifiants pour cloner les dépôts GitHub
-        - usernamePassword:
-            scope: GLOBAL
-            id: "github-token"
-            username: "flexpay-git-bot"
-            password: "${GITHUB_TOKEN}"
-            description: "GitHub Personal Access Token for SCM"
+        - credentials:
+            # Identifiants pour pousser sur Docker Hub
+            - usernamePassword:
+                scope: GLOBAL
+                id: "docker-hub-credentials"
+                username: "flexpay_admin"
+                password: "${DOCKER_HUB_PASSWORD}"
+                description: "Docker Hub Registry Credentials"
+            # Fichier Kubeconfig pour le déploiement K8s
+            - file:
+                scope: GLOBAL
+                id: "k8s-cluster-config"
+                fileName: "kubeconfig"
+                secretBytes: "${KUBECONFIG_CONTENT}"
+                description: "Kubernetes Cluster Configuration"
+            # Identifiants pour cloner les dépôts GitHub
+            - usernamePassword:
+                scope: GLOBAL
+                id: "github-token"
+                username: "flexpay-git-bot"
+                password: "${GITHUB_TOKEN}"
+                description: "GitHub Personal Access Token for SCM"
 
   # Configuration des agents dynamiques sur Kubernetes
   clouds:
