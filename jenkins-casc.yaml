@@ -16,12 +16,18 @@ jenkins:
 
   authorizationStrategy:
     projectMatrix:
-      permissions:
-        - "Overall/Administer:admin"
-        - "Overall/Read:authenticated"
-        - "Job/Read:authenticated"
-        - "Job/Build:authenticated"
-        - "Job/Workspace:authenticated"
+      entries:
+        - user:
+            name: "admin"
+            permissions:
+              - "Overall/Administer"
+        - group:
+            name: "authenticated"
+            permissions:
+              - "Overall/Read"
+              - "Job/Read"
+              - "Job/Build"
+              - "Job/Workspace"
 
   # Configuration des credentials pour le pipeline
   # Note: Les valeurs sont injectées via variables d'environnement
@@ -84,7 +90,7 @@ jenkins:
   views:
     - all:
         name: "All"
-    - listView:
+    - list:
         name: "FlexPay-Ecosystem"
         jobNames:
           - "flexpay-user-service-pipeline"
