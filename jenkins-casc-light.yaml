@@ -20,19 +20,6 @@ jenkins:
               - "Job/Build"
               - "Job/Workspace"
 
-  credentials:
-    system:
-      domainCredentials:
-        - # Ceci représente le domaine global par défaut
-          credentials:
-            # Identifiant requis pour le clone GitHub par le Job DSL
-            - usernamePassword:
-                scope: GLOBAL
-                id: "github-token"
-                username: "flexpay-git-bot"
-                password: "${GITHUB_TOKEN}"
-                description: "GitHub Personal Access Token for SCM"
-
   unclassified:
     location:
       url: "http://localhost:8080/"
