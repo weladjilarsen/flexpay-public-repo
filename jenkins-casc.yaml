@@ -1,0 +1,160 @@
+jenkins:
+  systemMessage: "FlexPay Ecosystem CI/CD - Managed by Configuration as Code"
+  numExecutors: 0 # PROD: Pas de builds sur le controller
+  mode: NORMAL
+  scmCheckoutRetryCount: 3
+  quietPeriod: 5
+
+  # Sécurité de production
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+
+  authorizationStrategy:
+    projectMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+        - "Job/Read:authenticated"
+        - "Job/Build:authenticated"
+        - "Job/Workspace:authenticated"
+
+  # Configuration des credentials pour le pipeline
+  # Note: Les valeurs sont injectées via variables d'environnement
+  credentials:
+    system:
+      domainCredentials:
+        - credentials:
+            # Identifiants pour pousser sur Docker Hub
+            - usernamePassword:
+                scope: GLOBAL
+                id: "docker-hub-credentials"
+                username: "flexpay_admin"
+                password: "${DOCKER_HUB_PASSWORD}"
+                description: "Docker Hub Registry Credentials"
+            # Fichier Kubeconfig pour le déploiement K8s
+            - file:
+                scope: GLOBAL
+                id: "k8s-cluster-config"
+                fileName: "kubeconfig"
+                secretBytes: "${KUBECONFIG_CONTENT}"
+                description: "Kubernetes Cluster Configuration"
+            # Identifiants pour cloner les dépôts GitHub
+            - usernamePassword:
+                scope: GLOBAL
+                id: "github-token"
+                username: "flexpay-git-bot"
+                password: "${GITHUB_TOKEN}"
+                description: "GitHub Personal Access Token for SCM"
+
+  # Configuration des agents dynamiques sur Kubernetes
+  clouds:
+    - kubernetes:
+        containerCapStr: "10"
+        jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+        name: "kubernetes"
+        namespace: "jenkins"
+        templates:
+          - name: "maven-agent"
+            label: "maven-agent"
+            containers:
+              - name: "maven"
+                image: "maven:3.9.6-eclipse-temurin-21-alpine"
+                command: "cat"
+                ttyEnabled: true
+              - name: "jnlp"
+                image: "jenkins/inbound-agent:alpine"
+
+  unclassified:
+    location:
+      url: "https://jenkins.flexpay.com/"
+      adminAddress: "devops@flexpay.com"
+    # Protection contre les attaques CSRF
+    crumbIssuer:
+      standard:
+        excludeClientIPFromCrumb: true
+
+  # Organisation de l'interface
+  views:
+    - all:
+        name: "All"
+    - listView:
+        name: "FlexPay-Ecosystem"
+        jobNames:
+          - "flexpay-user-service-pipeline"
+          - "flexpay-admin-server-service-pipeline"
+          - "flexpay-gateway-service-pipeline"
+        columns:
+          - "status"
+          - "weather"
+          - "jobName"
+          - "lastSuccess"
+          - "lastFailure"
+          - "lastDuration"
+          - "buildButton"
+
+# Installation automatique des outils requis
+tool:
+  jdk:
+    installations:
+      - name: "jdk-21"
+        properties:
+          - installSource:
+              installers:
+                - adoptOpenJDKInstaller:
+                    id: "jdk-21"
+  maven:
+    installations:
+      - name: "maven-3.9"
+        properties:
+          - installSource:
+              installers:
+                - mavenInstall:
+                    id: "3.9.6"
+                    
+jobs:
+  - script: >
+      folder('FlexPay-Microservices') {
+          description('Dossier contenant tous les pipelines de l\'écosystème FlexPay')
+      }
+
+  - script: >
+      def services = [
+          'user-service': 'Service utilisateur',
+          'admin-server-service': 'Service d\'administration',
+          'gateway-service': 'Passerelle API'
+      ]
+
+      services.each { name, desc ->
+          pipelineJob("FlexPay-Microservices/flexpay-${name}-pipeline") {
+            description("Pipeline de build et déploiement pour ${desc}")
+            definition {
+              cpsScm {
+                scm {
+                  git {
+                    remote {
+                      url("https://github.com/weladjilarsen/flexpay-${name}.git")
+                      credentials('github-token')
+                    }
+                    branches('*/main')
+                    extensions {
+                      cleanBeforeCheckout()
+                    }
+                  }
+                }
+                scriptPath('Jenkinsfile.groovy')
+              }
+            }
+            properties {
+              pipelineTriggers {
+                triggers {
+                  githubPush()
+                }
+              }
+            }
+          }
+      }
