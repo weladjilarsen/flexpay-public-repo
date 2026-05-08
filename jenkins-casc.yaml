@@ -5,15 +5,6 @@ jenkins:
   scmCheckoutRetryCount: 3
   quietPeriod: 5
 
-  # Sécurité de production
-  securityRealm:
-    local:
-      allowsSignup: false
-      enableCaptcha: false
-      users:
-        - id: "admin"
-          password: "${JENKINS_ADMIN_PASSWORD}"
-
   authorizationStrategy:
     projectMatrix:
       entries:
@@ -123,7 +114,6 @@ tool:
               installers:
                 - mavenInstall:
                     id: "3.9.6"
-                    
 
 # Création automatique de la pipeline via Job DSL
 jobs:
