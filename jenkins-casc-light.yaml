@@ -1,0 +1,105 @@
+jenkins:
+  systemMessage: "FlexPay Ecosystem CI/CD - Mode Light (Exécution Master)"
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 3
+  quietPeriod: 5
+
+  authorizationStrategy:
+    projectMatrix:
+      entries:
+        - user:
+            name: "admin"
+            permissions:
+              - "Overall/Administer"
+        - group:
+            name: "authenticated"
+            permissions:
+              - "Overall/Read"
+              - "Job/Read"
+              - "Job/Build"
+              - "Job/Workspace"
+
+  credentials:
+    system:
+      domainCredentials:
+        - credentials:
+            # Identifiant requis pour le clone GitHub par le Job DSL
+            - usernamePassword:
+                scope: GLOBAL
+                id: "github-token"
+                username: "flexpay-git-bot"
+                password: "${GITHUB_TOKEN}"
+                description: "GitHub Personal Access Token for SCM"
+
+  unclassified:
+    location:
+      url: "http://localhost:8080/"
+      adminAddress: "devops@flexpay.com"
+    crumbIssuer:
+      standard:
+        excludeClientIPFromCrumb: true
+
+  views:
+    - all:
+        name: "All"
+    - list:
+        name: "FlexPay-Ecosystem"
+        jobNames:
+          - "flexpay-user-service-pipeline"
+          - "flexpay-admin-server-service-pipeline"
+          - "flexpay-gateway-service-pipeline"
+        columns:
+          - "status"
+          - "weather"
+          - "jobName"
+          - "lastSuccess"
+          - "lastFailure"
+          - "lastDuration"
+          - "buildButton"
+
+tool:
+  jdk:
+    installations:
+      - name: "jdk-21"
+        properties:
+          - installSource:
+              installers:
+                - adoptOpenJDKInstaller:
+                    id: "jdk-21"
+  maven:
+    installations:
+      - name: "maven-3.9"
+        properties:
+          - installSource:
+              installers:
+                - mavenInstall:
+                    id: "3.9.6"
+
+jobs:
+  - script: >
+      folder('FlexPay-Microservices') {
+          description('Dossier contenant tous les pipelines de l\'écosystème FlexPay')
+      }
+
+  - script: >
+      def services = ['user-service', 'admin-server-service', 'gateway-service']
+
+      services.each { name ->
+          pipelineJob("FlexPay-Microservices/flexpay-${name}-pipeline") {
+            definition {
+              cpsScm {
+                scm {
+                  git {
+                    remote {
+                      url("https://github.com/weladjilarsen/flexpay-${name}.git")
+                      credentials('github-token')
+                    }
+                    branches('*/main')
+                  }
+                }
+                scriptPath('Jenkinsfile.groovy')
+              }
+            }
+          }
+      }
