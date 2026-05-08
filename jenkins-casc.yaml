@@ -20,7 +20,7 @@ jenkins:
               - "Job/Build"
               - "Job/Workspace"
 
-  # Note: Les variables ci-dessous (${GITHUB_TOKEN}, etc.) DOIVENT être 
+  # Note: Les variables ci-dessous (${GITHUB_TOKEN}, etc.) DOIVENT être
   # définies dans l'environnement du conteneur Jenkins pour fonctionner.
 
   # Configuration des credentials pour le pipeline
@@ -55,7 +55,8 @@ jenkins:
   clouds:
     - kubernetes:
         containerCapStr: "10"
-        jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+        serverUrl: "https://kubernetes.docker.internal:6443" # URL pour Docker Desktop (ou IP de minikube)
+        jenkinsUrl: "http://host.docker.internal:8080" # Permet aux agents de "rappeler" Jenkins
         name: "kubernetes"
         namespace: "jenkins"
         templates:
