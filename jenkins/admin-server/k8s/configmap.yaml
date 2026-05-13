@@ -1,0 +1,18 @@
+# ════════════════════════════════════════════════════════════════════════
+# Kubernetes ConfigMap — flexpay-admin-server
+# ════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flexpay-admin-server-config
+  labels:
+    app.kubernetes.io/name: flexpay-admin-server
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SERVER_PORT: "9090"
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "INFO"
+  SHUTDOWN_TIMEOUT: "30s"
+  ERROR_INCLUDE_STACKTRACE: "never"
+  ACTUATOR_HEALTH_DETAILS: "when_authorized"

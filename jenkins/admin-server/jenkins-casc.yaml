@@ -1,0 +1,208 @@
+# ════════════════════════════════════════════════════════════════════════
+# Jenkins Configuration as Code (JCasC)
+# flexpay-admin-server-service
+#
+# Architecture :
+#   - VM Ubuntu avec Docker Engine
+#   - Jenkins = container Docker (docker.sock monté)
+#   - Registry Docker local = localhost:5000 (sans auth)
+#   - Kubernetes (k3s/microk8s) sur la même VM
+#
+# Chargement depuis le Mac :
+#   Manage Jenkins → Configuration as Code → Replace configuration
+# ════════════════════════════════════════════════════════════════════════
+
+jenkins:
+
+  # ─────────────── CONFIGURATION SYSTÈME ──────────────────────────────
+  systemMessage: >-
+    Jenkins CI/CD — FlexPay Platform
+    VM Ubuntu / Docker Engine + Registry local + Kubernetes
+
+  numExecutors: 2
+  mode: NORMAL
+
+  # ─────────────── SÉCURITÉ ───────────────────────────────────────────
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_USER:-admin}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+          name: "Jenkins Admin"
+
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            description: "Administrateurs Jenkins"
+            permissions:
+              - "Overall/Administer"
+            entries:
+              - user: "${JENKINS_ADMIN_USER:-admin}"
+          - name: "developer"
+            description: "Développeurs — lecture + build"
+            permissions:
+              - "Overall/Read"
+              - "Job/Build"
+              - "Job/Read"
+              - "Job/Workspace"
+              - "Job/Cancel"
+              - "Run/Replay"
+            entries:
+              - group: "developers"
+          - name: "viewer"
+            description: "Lecture seule"
+            permissions:
+              - "Overall/Read"
+              - "Job/Read"
+            entries:
+              - group: "viewers"
+
+  # ─────────────── CONFIGURATION GLOBALE ──────────────────────────────
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: "JAVA_HOME"
+            value: "/opt/java/openjdk"
+          - key: "MAVEN_OPTS"
+            value: "-Xmx1024m"
+
+# ═══════════════════════════════════════════════════════════════════════
+# CREDENTIALS
+# ═══════════════════════════════════════════════════════════════════════
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+
+          # ── Git / GitHub ─────────────────────────────────────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-credentials"
+              username: "${GITHUB_USER}"
+              password: "${GITHUB_TOKEN}"
+              description: "GitHub — accès aux repos FlexPay"
+
+          # ── Kubeconfig (cluster K8s local) ───────────────────────────
+          - file:
+              scope: GLOBAL
+              id: "kubeconfig-file"
+              fileName: "kubeconfig"
+              secretBytes: "${KUBECONFIG_BASE64}"
+              description: "Kubeconfig — cluster Kubernetes local"
+
+          # ── Credentials du microservice ──────────────────────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "admin-server-credentials"
+              username: "${ADMIN_USERNAME:-admin}"
+              password: "${ADMIN_PASSWORD}"
+              description: "Spring Security credentials pour admin-server"
+
+# ═══════════════════════════════════════════════════════════════════════
+# OUTILS (TOOLS)
+# ═══════════════════════════════════════════════════════════════════════
+tool:
+  maven:
+    installations:
+      - name: "maven-3.9"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.9.9"
+
+  jdk:
+    installations:
+      - name: "jdk-21"
+        properties:
+          - installSource:
+              installers:
+                - adoptOpenJdkInstaller:
+                    id: "jdk-21.0.5+11"
+
+  dependencyCheck:
+    installations:
+      - name: "dependency-check"
+        properties:
+          - installSource:
+              installers:
+                - dependencyCheckInstaller:
+                    id: "10.0.4"
+
+# ═══════════════════════════════════════════════════════════════════════
+# CONFIGURATION DES PLUGINS
+# ═══════════════════════════════════════════════════════════════════════
+unclassified:
+
+  # ── Email ─────────────────────────────────────────────────────────────
+  emailext:
+    defaultRecipients: "${EMAIL_RECIPIENTS:-devops@flexpay.com}"
+    defaultContentType: "text/plain"
+    defaultSubject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS"
+
+  # ── Global Pipeline Libraries ────────────────────────────────────────
+  globalLibraries:
+    libraries:
+      - name: "flexpay-shared-library"
+        defaultVersion: "main"
+        retriever:
+          modernSCM:
+            scm:
+              git:
+                remote: "${SHARED_LIBRARY_REPO:-https://github.com/flexpay/jenkins-shared-library.git}"
+                credentialsId: "github-credentials"
+
+  # ── Git ──────────────────────────────────────────────────────────────
+  gitSCM:
+    globalConfigName: "Jenkins CI"
+    globalConfigEmail: "ci@flexpay.com"
+
+  # ── Audit Trail ──────────────────────────────────────────────────────
+  audit-trail:
+    logBuildCause: true
+    pattern: ".*/(?:configSubmit|doDelete|postBuildResult|enable|disable|cancelQueue|stop|toggleLogKeep|doWipeOutWorkspace|createItem|createView|toggleOffline|cancelQuietDown|quietDown|restart|exit|safeExit).*"
+
+# ═══════════════════════════════════════════════════════════════════════
+# JOBS (Seed Job)
+# ═══════════════════════════════════════════════════════════════════════
+jobs:
+  - script: |
+      multibranchPipelineJob('flexpay-admin-server') {
+        displayName('FlexPay Admin Server')
+        description('CI/CD — Docker build + K8s deploy (registry local)')
+
+        branchSources {
+          github {
+            id('flexpay-admin-server-github')
+            repoOwner('${GITHUB_ORG:-flexpay}')
+            repository('flexpay-admin-server-service')
+            credentialsId('github-credentials')
+
+            buildForkPRMerge(true)
+            buildOriginBranch(true)
+            buildOriginBranchWithPR(false)
+            buildOriginPRMerge(true)
+          }
+        }
+
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(10)
+          }
+        }
+
+        triggers {
+          periodicFolderTrigger {
+            interval('5m')
+          }
+        }
+
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }

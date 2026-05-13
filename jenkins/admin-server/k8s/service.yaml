@@ -1,0 +1,23 @@
+# ════════════════════════════════════════════════════════════════════════
+# Kubernetes Service — flexpay-admin-server
+#
+# NodePort pour exposer le service sur la VM Ubuntu.
+# Accessible depuis le Mac via http://<IP_VM>:<nodePort>
+# ════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: flexpay-admin-server
+  labels:
+    app.kubernetes.io/name: flexpay-admin-server
+spec:
+  type: NodePort
+  ports:
+    - port: 9090
+      targetPort: http
+      nodePort: 30090
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: flexpay-admin-server

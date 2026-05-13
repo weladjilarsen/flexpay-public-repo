@@ -1,0 +1,18 @@
+# ════════════════════════════════════════════════════════════════════════
+# Kubernetes Namespaces — FlexPay
+# ════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexpay-staging
+  labels:
+    app.kubernetes.io/part-of: flexpay
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexpay-prod
+  labels:
+    app.kubernetes.io/part-of: flexpay
