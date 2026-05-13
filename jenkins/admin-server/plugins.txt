@@ -1,78 +1,102 @@
 # ════════════════════════════════════════════════════════════════════════
-# plugins.txt — Plugins Jenkins requis pour flexpay-admin-server CI/CD
+# plugins.txt — Plugins Jenkins pour la plateforme FlexPay
 #
-# Installation sur votre instance Jenkins existante :
+# Stack VM Ubuntu :
+#   Traefik · Portainer · Redis · Prometheus · Grafana
+#   Jenkins · PgAdmin · RabbitMQ · Minikube · Registry local
+#
+# ── INSTALLATION ──────────────────────────────────────────────────────
+#
+# Étape 1 — Installer les 14 plugins REQUIS CASC en premier :
 #   Manage Jenkins → Plugins → Available plugins
+#   Cocher les 14 marqués ★ puis "Install and restart"
 #
-# Les 14 plugins CRITIQUES pour le JCasC sont marqués ←── REQUIS CASC
-# Les autres sont nécessaires pour le pipeline Jenkinsfile.
+# Étape 2 — Installer le reste des plugins (pipeline + utilitaires)
+#
+# Étape 3 — Charger le JCasC :
+#   Manage Jenkins → Configuration as Code → Apply
+#
 # ════════════════════════════════════════════════════════════════════════
 
-# ─────────────── CORE / PIPELINE ──────────────────────────────────────
-workflow-aggregator:latest              # Pipeline Declarative + Scripted  ←── REQUIS CASC
+
+# ══════════════════════════════════════════════════════════════════════
+#  ★ PLUGINS REQUIS POUR LE CASC (14)
+#  Sans eux, le chargement du jenkins-casc.yaml échoue.
+#  À installer EN PREMIER + redémarrer Jenkins.
+# ══════════════════════════════════════════════════════════════════════
+
+configuration-as-code:latest            # ★ Le menu JCasC lui-même
+job-dsl:latest                          # ★ Seed jobs dans le JCasC
+role-strategy:latest                    # ★ authorizationStrategy: roleBased
+credentials:latest                      # ★ Gestion des credentials
+credentials-binding:latest              # ★ Injection credentials dans les builds
+plain-credentials:latest                # ★ Credentials string + file (kubeconfig)
+git:latest                              # ★ Section gitSCM
+github-branch-source:latest             # ★ GitHub source dans le seed job
+workflow-aggregator:latest              # ★ workflowBranchProjectFactory
+maven-plugin:latest                     # ★ tool: maven
+adoptopenjdk:latest                     # ★ tool: jdk (adoptOpenJdkInstaller)
+dependency-check-jenkins-plugin:latest  # ★ tool: dependencyCheck
+email-ext:latest                        # ★ Section emailext
+audit-trail:latest                      # ★ Section audit-trail
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  PLUGINS PIPELINE (Jenkinsfile)
+#  Nécessaires pour exécuter le pipeline CI/CD.
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Pipeline core ─────────────────────────────────────────────────────
 pipeline-stage-view:latest              # Visualisation des stages
 pipeline-graph-view:latest              # Vue graphique du pipeline
-pipeline-build-step:latest              # Build steps dans les pipelines
-pipeline-input-step:latest              # Input step (approbation prod)
+pipeline-build-step:latest              # Build steps
+pipeline-input-step:latest              # Input step (approbation deploy)
 pipeline-milestone-step:latest          # Milestones
 pipeline-utility-steps:latest           # Utilitaires (readMavenPom, etc.)
 
-# ─────────────── SCM / GIT ────────────────────────────────────────────
-git:latest                              # Plugin Git de base               ←── REQUIS CASC
-github:latest                           # Intégration GitHub
-github-branch-source:latest             # Multibranch pipeline GitHub      ←── REQUIS CASC
-github-checks:latest                    # GitHub Checks API (statuts PR)
+# ── Git / GitHub ──────────────────────────────────────────────────────
+github:latest                           # Intégration GitHub (webhooks)
+github-checks:latest                    # Statuts checks sur les PR
 
-# ─────────────── CONFIGURATION AS CODE ────────────────────────────────
-configuration-as-code:latest            # JCasC — le menu lui-même         ←── REQUIS CASC
-job-dsl:latest                          # Job DSL (seed jobs)              ←── REQUIS CASC
-
-# ─────────────── DOCKER ───────────────────────────────────────────────
-docker-workflow:latest                  # Docker pipeline steps
+# ── Docker (build via docker.sock) ────────────────────────────────────
+docker-workflow:latest                  # Docker steps dans le pipeline
 docker-commons:latest                   # Utilitaires Docker partagés
 
-# ─────────────── KUBERNETES (déploiement) ─────────────────────────────
+# ── Kubernetes (déploiement sur Minikube) ─────────────────────────────
 kubernetes-cli:latest                   # kubectl dans le pipeline
 
-# ─────────────── BUILD / MAVEN / JDK ─────────────────────────────────
-maven-plugin:latest                     # Support Maven                    ←── REQUIS CASC
-adoptopenjdk:latest                     # Installateur JDK Temurin         ←── REQUIS CASC
+# ── Build ─────────────────────────────────────────────────────────────
 config-file-provider:latest             # Fichiers de config (settings.xml)
 
-# ─────────────── CREDENTIALS ──────────────────────────────────────────
-credentials:latest                      # Gestion des credentials          ←── REQUIS CASC
-credentials-binding:latest              # Injection credentials             ←── REQUIS CASC
-plain-credentials:latest                # Credentials texte/file           ←── REQUIS CASC
+# ── Tests & Qualité ───────────────────────────────────────────────────
+junit:latest                            # Rapports JUnit (mvn test)
+jacoco:latest                           # Rapports couverture de code
+warnings-ng:latest                      # Analyse statique (SpotBugs, PMD)
+test-results-analyzer:latest            # Tendances des résultats de tests
 
-# ─────────────── QUALITÉ / ANALYSE ────────────────────────────────────
-jacoco:latest                           # Rapports de couverture JaCoCo
-warnings-ng:latest                      # Analyse statique
-dependency-check-jenkins-plugin:latest  # OWASP Dependency-Check           ←── REQUIS CASC
+# ── Notifications ─────────────────────────────────────────────────────
+mailer:latest                           # Email de base
 
-# ─────────────── TESTS ────────────────────────────────────────────────
-junit:latest                            # Rapports JUnit
-test-results-analyzer:latest            # Tendances des résultats
 
-# ─────────────── SÉCURITÉ ─────────────────────────────────────────────
-role-strategy:latest                    # Role-Based Authorization         ←── REQUIS CASC
-audit-trail:latest                      # Audit trail                      ←── REQUIS CASC
+# ══════════════════════════════════════════════════════════════════════
+#  PLUGINS INFRASTRUCTURE
+#  Intégration avec la stack Docker (Prometheus, Grafana, Traefik).
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Monitoring (→ Prometheus + Grafana de la stack) ───────────────────
+prometheus:latest                       # Expose /prometheus pour le scrape
+metrics:latest                          # Métriques JVM Jenkins
+disk-usage:latest                       # Surveillance espace disque
+
+# ── Sécurité ──────────────────────────────────────────────────────────
 antisamy-markup-formatter:latest        # Formatage HTML sécurisé
 
-# ─────────────── NOTIFICATIONS ────────────────────────────────────────
-email-ext:latest                        # Notifications email avancées     ←── REQUIS CASC
-mailer:latest                           # Plugin email de base
-
-# ─────────────── UI / UTILITAIRES ─────────────────────────────────────
-timestamper:latest                      # Timestamps dans les logs
-ws-cleanup:latest                       # Nettoyage du workspace
+# ── UI / Utilitaires ─────────────────────────────────────────────────
+timestamper:latest                      # Timestamps dans les logs de build
+ws-cleanup:latest                       # Nettoyage workspace (cleanWs)
 build-timeout:latest                    # Timeout des builds
-rebuild:latest                          # Relancer un build
+rebuild:latest                          # Bouton relancer un build
 ansicolor:latest                        # Couleurs ANSI dans les logs
 locale:latest                           # Localisation (fr)
-dark-theme:latest                       # Thème sombre Jenkins
+dark-theme:latest                       # Thème sombre
 blueocean:latest                        # Interface moderne Blue Ocean
-
-# ─────────────── MONITORING JENKINS ───────────────────────────────────
-metrics:latest                          # Métriques JVM Jenkins
-prometheus:latest                       # Export métriques Prometheus
-disk-usage:latest                       # Surveillance espace disque
