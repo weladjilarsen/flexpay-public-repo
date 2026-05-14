@@ -1,5 +1,5 @@
 # ════════════════════════════════════════════════════════════════════════
-# Jenkins Configuration as Code (JCasC)
+# Jenkins Configuration as Code (JCasC) — Jenkins 2.555.1
 # flexpay-admin-server-service
 #
 # Architecture :
@@ -8,30 +8,26 @@
 #   - Registry Docker local = localhost:5000 (sans auth)
 #   - Minikube (Docker driver) sur la meme VM
 #
-# Chargement depuis le Mac :
+# Chargement :
 #   Manage Jenkins -> Configuration as Code -> Replace configuration
 #
-# APRES le chargement JCasC, creer manuellement :
-#   1. Credential kubeconfig :
-#      Manage Jenkins -> Credentials -> System -> Global -> Add
-#      Kind : Secret file | ID : kubeconfig-file | File : kubeconfig
-#   2. Outils (Maven, JDK, Dependency-Check) :
+# APRES le chargement, configurer manuellement :
+#   1. Credential kubeconfig (Secret file) :
+#      Manage Jenkins -> Credentials -> Add -> Secret file
+#      ID : kubeconfig-file | File : kubeconfig
+#   2. Email :
+#      Manage Jenkins -> System -> Extended E-mail Notification
+#   3. Outils (Maven, JDK, Dependency-Check) :
 #      Manage Jenkins -> Tools
-#   3. Job multibranch :
+#   4. Job multibranch :
 #      New Item -> Multibranch Pipeline -> flexpay-admin-server
 # ════════════════════════════════════════════════════════════════════════
 
 jenkins:
-
-  # ─────────────── CONFIGURATION SYSTEME ──────────────────────────────
-  systemMessage: >-
-    Jenkins CI/CD - FlexPay Platform
-    VM Ubuntu / Docker Engine + Registry local + Kubernetes
-
+  systemMessage: "Jenkins CI/CD - FlexPay Platform - VM Ubuntu / Docker Engine + Registry local + Kubernetes"
   numExecutors: 2
   mode: NORMAL
 
-  # ─────────────── SECURITE ───────────────────────────────────────────
   securityRealm:
     local:
       allowsSignup: false
@@ -69,7 +65,6 @@ jenkins:
             entries:
               - group: "viewers"
 
-  # ─────────────── CONFIGURATION GLOBALE ──────────────────────────────
   globalNodeProperties:
     - envVars:
         env:
@@ -78,23 +73,16 @@ jenkins:
           - key: "MAVEN_OPTS"
             value: "-Xmx1024m"
 
-# ═══════════════════════════════════════════════════════════════════════
-# CREDENTIALS
-# ═══════════════════════════════════════════════════════════════════════
 credentials:
   system:
     domainCredentials:
       - credentials:
-
-          # ── Git / GitHub ─────────────────────────────────────────────
           - usernamePassword:
               scope: GLOBAL
               id: "github-credentials"
               username: "${GITHUB_USER:-weladjilarsen}"
               password: "${GITHUB_TOKEN:-token}"
               description: "GitHub - acces aux repos FlexPay"
-
-          # ── Credentials du microservice ──────────────────────────────
           - usernamePassword:
               scope: GLOBAL
               id: "admin-server-credentials"
@@ -102,18 +90,7 @@ credentials:
               password: "${ADMIN_SERVER_PASSWORD:-changeme}"
               description: "Spring Security credentials pour admin-server"
 
-# ═══════════════════════════════════════════════════════════════════════
-# CONFIGURATION DES PLUGINS
-# ═══════════════════════════════════════════════════════════════════════
 unclassified:
-
-  # ── Email ─────────────────────────────────────────────────────────────
-  emailext:
-    defaultRecipients: "${EMAIL_RECIPIENTS:-devops@flexpay.com}"
-    defaultContentType: "text/plain"
-    defaultSubject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS"
-
-  # ── Git ──────────────────────────────────────────────────────────────
-  gitSCM:
+  scmGit:
     globalConfigName: "Jenkins CI"
     globalConfigEmail: "ci@flexpay.com"
