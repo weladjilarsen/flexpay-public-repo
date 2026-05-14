@@ -1,3 +1,23 @@
-docker network rm minikube
-Error response from daemon: error while removing network: network minikube has active endpoints (name:"jenkins" id:"2bc488c541d1")
-exit status 1
+docker network disconnect minikube jenkins
+larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ docker network rm minikube
+minikube
+larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube start --driver=docker --subnet=192.168.60.0/24
+😄  minikube v1.38.1 sur Ubuntu 26.04
+✨  Utilisation du pilote docker basé sur le profil existant
+👍  Démarrage du nœud "minikube" primary control-plane dans le cluster "minikube"
+🚜  Extraction de l'image de base v0.0.50...
+🤷  docker "minikube" container est manquant, il va être recréé.
+🔥  Création de docker container (CPU=2, Memory=3072Mo) ...
+🐳  Préparation de Kubernetes v1.35.1 sur Docker 29.2.1...
+🔗  Configuration de bridge CNI (Container Networking Interface)...
+🔎  Vérification des composants Kubernetes...
+    ▪ Utilisation de l'image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Modules activés: default-storageclass, storage-provisioner
+🏄  Terminé ! kubectl est maintenant configuré pour utiliser "minikube" cluster et espace de noms "default" par défaut.
+larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
