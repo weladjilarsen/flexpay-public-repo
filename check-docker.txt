@@ -1,7 +1,41 @@
-kubectl describe pod flexpay-admin-server-6768b8c448-nzfz7 -n flexpay-prod | grep -A5 "Events"
-Events:
-  Type     Reason     Age                    From               Message
-  ----     ------     ----                   ----               -------
-  Normal   Scheduled  7m25s                  default-scheduler  Successfully assigned flexpay-prod/flexpay-admin-server-6768b8c448-nzfz7 to minikube
-  Normal   Pulling    4m22s (x5 over 7m21s)  kubelet            spec.containers{flexpay-admin-server}: Pulling image "100.67.178.90:5000/flexpay-admin-server:17"
-  Warning  Failed     4m22s (x5 over 7m21s)  kubelet            spec.containers{flexpay-admin-server}: Failed to pull image "100.67.178.90:5000/flexpay-admin-server:17": Error response from daemon: Get "https://100.67.178.90:5000/v2/": http: server gave HTTP response to HTTPS client
+sudo apt install -y xrdp xfce4 xfce4-goodies
+xrdp est déjà la version la plus récente (0.10.1-4.1).
+Installation de :                      
+  xfce4  xfce4-goodies
+
+Installation de dépendances : 
+  desktop-base                libtag-c2                 lightdm-gtk-greeter       xfce4-clipman-plugin         xfce4-screenshooter
+  elementary-xfce-icon-theme  libthunarx-3-0            lm-sensors                xfce4-cpufreq-plugin         xfce4-sensors-plugin
+  exo-utils                   libtumbler-1-0t64         mate-polkit               xfce4-cpugraph-plugin        xfce4-session
+  fonts-quicksand             libutempter0              mate-polkit-common        xfce4-dict                   xfce4-settings
+  greybird-gtk-theme          libxfce4panel-2.0-4       mousepad                  xfce4-diskperf-plugin        xfce4-smartbookmark-plugin
+  libdbus-glib-1-2            libxfce4ui-2-0            pavucontrol               xfce4-fsguard-plugin         xfce4-systemload-plugin
+  libexo-2-0                  libxfce4ui-common         ristretto                 xfce4-genmon-plugin          xfce4-taskmanager
+  libexo-common               libxfce4ui-utils          tango-icon-theme          xfce4-helpers                xfce4-terminal
+  libgarcon-1-0               libxfce4util-bin          thunar                    xfce4-mailwatch-plugin       xfce4-timer-plugin
+  libgarcon-common            libxfce4util-common       thunar-archive-plugin     xfce4-netload-plugin         xfce4-verve-plugin
+  libgarcon-gtk3-1-0          libxfce4util7             thunar-data               xfce4-notes                  xfce4-wavelan-plugin
+  libgspell-1-3               libxfce4windowing-0-0     thunar-media-tags-plugin  xfce4-notes-plugin           xfce4-weather-plugin
+  libgspell-1-common          libxfce4windowing-common  thunar-volman             xfce4-notifyd                xfce4-whiskermenu-plugin
+  libgtk-layer-shell0         libxfconf-0-3             tumbler                   xfce4-panel                  xfce4-xkb-plugin
+  libgtksourceview-4-0        libxklavier16             tumbler-common            xfce4-places-plugin          xfconf
+  libgtksourceview-4-common   libxnvctrl0               xfburn                    xfce4-power-manager          xfdesktop4
+  libkeybinder-3.0-0          libxpresent1              xfce4-appfinder           xfce4-power-manager-data     xfdesktop4-data
+  liblightdm-gobject-1-0      light-locker              xfce4-battery-plugin      xfce4-power-manager-plugins  xfwm4
+  libmousepad0                lightdm                   xfce4-clipman             xfce4-pulseaudio-plugin      xiccd
+
+Paquets suggérés :
+  devhelp         i2c-tools           gnome-icon-theme       parole                  xfce4-radio-plugin  mugshot
+  xserver-xephyr  read-edid           tumbler-plugins-extra  xfce4-indicator-plugin  xsensors            xfconf-gsettings-backend
+  fancontrol      libavif-gdk-pixbuf  gigolo                 xfce4-mpc-plugin        fortune-mod
+
+Sommaire :
+  Mise à niveau de : 0. Installation de : 97, Supprimé : 0. Non mis à jour : 4
+Taille du téléchargement : 0 o / 37,6 Mo
+  Espace nécessaire : 199 Mo / 433 Go disponible
+
+Extraction des modèles depuis les paquets : 100%
+Préconfiguration des paquets...
+/bin/sh: 1: /usr/bin/apt_hook_ubuntu_virt: not found
+Erreur : Le sous-processus /usr/bin/apt_hook_ubuntu_virt a renvoyé un code d'erreur (127)
+Erreur : Failure running script /usr/bin/apt_hook_ubuntu_virt
