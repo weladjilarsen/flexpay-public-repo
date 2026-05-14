@@ -1,6 +1,5 @@
-sudo apt install -y xrdp xfce4 xfce4-goodies
-xrdp est déjà la version la plus récente (0.10.1-4.1).
-Installation de :                      
+sudo apt install -y xfce4 xfce4-goodies -o APT::Update::Post-Invoke-Success::="" -o DPkg::Post-Invoke::=""
+Installation de :                               
   xfce4  xfce4-goodies
 
 Installation de dépendances : 
@@ -39,3 +38,7 @@ Préconfiguration des paquets...
 /bin/sh: 1: /usr/bin/apt_hook_ubuntu_virt: not found
 Erreur : Le sous-processus /usr/bin/apt_hook_ubuntu_virt a renvoyé un code d'erreur (127)
 Erreur : Failure running script /usr/bin/apt_hook_ubuntu_virt
+larsen@larsen-300E4C-300E5C-300E7C:~$ grep -r "apt_hook" /etc/apt/ /usr/lib/apt/ 2>/dev/null 
+/etc/apt/apt.conf.d/99-ubuntu-virt.conf:  "/usr/bin/apt_hook_ubuntu_virt";
+/etc/apt/apt.conf.d/99-ubuntu-virt.conf:DPkg::Tools::options::/usr/bin/apt_hook_ubuntu_virt::Version "2";
+larsen@larsen-300E4C-300E5C-300E7C:~$ 
