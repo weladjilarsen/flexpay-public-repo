@@ -1,18 +1,20 @@
 #!/bin/bash
 # ════════════════════════════════════════════════════════════════════════
-# setup.sh — Installation complète CI/CD sur VM Ubuntu
+# setup.sh — Installation complete CI/CD sur VM Ubuntu
 #
 # Ce script installe et configure :
 #   1. Docker Registry local (port 5000)
 #   2. Minikube (Kubernetes via driver Docker)
-#   3. Jenkins (container Docker)
-#   4. Génère le KUBECONFIG_BASE64
+#   3. kubectl
+#   4. Kubeconfig flatten pour Jenkins
+#   5. Service systemd pour Minikube (demarrage auto)
+#   6. Connexion reseau Jenkins <-> Minikube
 #
 # Usage :
 #   chmod +x setup.sh
 #   ./setup.sh
 #
-# Exécuter sur la VM Ubuntu (PAS sur le Mac).
+# Executer sur la VM Ubuntu (PAS sur le Mac).
 # ════════════════════════════════════════════════════════════════════════
 
 set -euo pipefail
@@ -22,50 +24,54 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log()  { echo -e "${GREEN}[✓]${NC} $1"; }
+log()  { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
-err()  { echo -e "${RED}[✗]${NC} $1"; exit 1; }
+err()  { echo -e "${RED}[X]${NC} $1"; exit 1; }
 
-# ─────────────── DÉTECTION IP HÔTE ────────────────────────────────────
-# L'IP de la VM est nécessaire car Minikube (container Docker) ne peut
-# pas accéder à localhost de la VM. On utilise l'IP réelle à la place.
-HOST_IP=$(hostname -I | awk '{print $1}')
-log "IP de la VM détectée : ${HOST_IP}"
+CURRENT_USER=$(whoami)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# ─────────────── 1. PRÉREQUIS ─────────────────────────────────────────
+# ─────────────── DETECTION IP HOTE ────────────────────────────────────
+# Tailscale IP si disponible, sinon IP locale
+if command -v tailscale >/dev/null 2>&1; then
+    HOST_IP=$(tailscale ip -4 2>/dev/null || hostname -I | awk '{print $1}')
+else
+    HOST_IP=$(hostname -I | awk '{print $1}')
+fi
+log "IP de la VM detectee : ${HOST_IP}"
+
+# ─────────────── 1. PREREQUIS ─────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 1 — Vérification des prérequis"
+echo "  ETAPE 1 — Verification des prerequis"
 echo "════════════════════════════════════════════════════════════"
 
-command -v docker >/dev/null 2>&1 || err "Docker non installé. Installer Docker Engine d'abord."
+command -v docker >/dev/null 2>&1 || err "Docker non installe. Installer Docker Engine d'abord."
 log "Docker Engine OK"
 
-# Vérifier que l'utilisateur peut exécuter docker sans sudo
 if ! docker ps >/dev/null 2>&1; then
-    warn "Docker nécessite sudo. Ajout au groupe docker..."
-    sudo usermod -aG docker "$USER"
-    warn "Déconnecte-toi et reconnecte-toi, puis relance ce script."
+    warn "Docker necessite sudo. Ajout au groupe docker..."
+    sudo usermod -aG docker "$CURRENT_USER"
+    warn "Deconnecte-toi et reconnecte-toi, puis relance ce script."
     exit 1
 fi
 
 # ─────────────── 2. CONFIGURER DOCKER POUR REGISTRY INSECURE ─────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 2 — Configuration Docker (insecure registry)"
+echo "  ETAPE 2 — Configuration Docker (insecure registry)"
 echo "════════════════════════════════════════════════════════════"
 
 DAEMON_JSON="/etc/docker/daemon.json"
 INSECURE_ENTRY="${HOST_IP}:5000"
 
 if [ -f "$DAEMON_JSON" ] && grep -q "$INSECURE_ENTRY" "$DAEMON_JSON"; then
-    log "Docker daemon déjà configuré pour ${INSECURE_ENTRY}"
+    log "Docker daemon deja configure pour ${INSECURE_ENTRY}"
 else
     warn "Configuration de Docker pour accepter le registry local..."
     sudo mkdir -p /etc/docker
 
     if [ -f "$DAEMON_JSON" ]; then
-        # Ajouter l'entrée au fichier existant
         sudo cp "$DAEMON_JSON" "${DAEMON_JSON}.bak"
         sudo python3 -c "
 import json
@@ -87,17 +93,17 @@ with open('$DAEMON_JSON', 'w') as f:
     fi
 
     sudo systemctl restart docker
-    log "Docker redémarré avec insecure-registries: localhost:5000, ${INSECURE_ENTRY}"
+    log "Docker redemarre avec insecure-registries: localhost:5000, ${INSECURE_ENTRY}"
 fi
 
-# ─────────────── 3. DÉMARRER LE REGISTRY ──────────────────────────────
+# ─────────────── 3. DEMARRER LE REGISTRY ──────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 3 — Registry Docker local (port 5000)"
+echo "  ETAPE 3 — Registry Docker local (port 5000)"
 echo "════════════════════════════════════════════════════════════"
 
 if docker ps --format '{{.Names}}' | grep -q '^registry$'; then
-    log "Registry déjà en cours d'exécution"
+    log "Registry deja en cours d'execution"
 else
     docker rm -f registry 2>/dev/null || true
     docker run -d \
@@ -106,10 +112,9 @@ else
       -p 5000:5000 \
       -v registry-data:/var/lib/registry \
       registry:2
-    log "Registry démarré sur localhost:5000"
+    log "Registry demarre sur localhost:5000"
 fi
 
-# Tester le registry
 sleep 2
 if curl -sf http://localhost:5000/v2/ >/dev/null; then
     log "Registry accessible et fonctionnel"
@@ -117,161 +122,193 @@ else
     err "Registry non accessible sur localhost:5000"
 fi
 
-# ─────────────── 4. INSTALLER MINIKUBE ────────────────────────────────
+# ─────────────── 4. INSTALLER KUBECTL + MINIKUBE ─────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 4 — Installation Minikube + kubectl"
+echo "  ETAPE 4 — Installation kubectl + Minikube"
 echo "════════════════════════════════════════════════════════════"
 
-# Installer kubectl
 if ! command -v kubectl >/dev/null 2>&1; then
     warn "Installation de kubectl..."
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
     rm kubectl
-    log "kubectl installé"
+    log "kubectl installe"
 else
-    log "kubectl déjà installé : $(kubectl version --client --short 2>/dev/null || kubectl version --client)"
+    log "kubectl deja installe"
 fi
 
-# Installer minikube
 if ! command -v minikube >/dev/null 2>&1; then
     warn "Installation de Minikube..."
     curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     sudo install minikube-linux-amd64 /usr/local/bin/minikube
     rm minikube-linux-amd64
-    log "Minikube installé"
+    log "Minikube installe"
 else
-    log "Minikube déjà installé : $(minikube version --short)"
+    log "Minikube deja installe"
 fi
 
-# ─────────────── 5. DÉMARRER MINIKUBE ─────────────────────────────────
+# ─────────────── 5. DEMARRER MINIKUBE ─────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 5 — Démarrage du cluster Kubernetes (Minikube)"
+echo "  ETAPE 5 — Demarrage du cluster Kubernetes (Minikube)"
 echo "════════════════════════════════════════════════════════════"
 
 MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
 
 if [ "$MINIKUBE_STATUS" = "Running" ]; then
-    log "Minikube déjà en cours d'exécution"
+    log "Minikube deja en cours d'execution"
 else
-    warn "Démarrage de Minikube (driver Docker)..."
+    warn "Demarrage de Minikube (driver Docker)..."
     minikube start \
       --driver=docker \
       --cpus=2 \
       --memory=4096 \
+      --subnet=192.168.60.0/24 \
       --insecure-registry="${HOST_IP}:5000"
-
-    log "Minikube démarré"
+    log "Minikube demarre"
 fi
 
-# Vérifier le cluster
 kubectl get nodes
-log "Cluster Kubernetes opérationnel"
+log "Cluster Kubernetes operationnel"
 
-# ─────────────── 6. CONFIGURER MINIKUBE → REGISTRY ────────────────────
-# Minikube (container) doit pouvoir pull depuis le registry de la VM.
-# On configure containerd à l'intérieur de Minikube pour utiliser l'IP
-# de la VM au lieu de localhost.
+# ─────────────── 6. CONNECTER JENKINS AU RESEAU MINIKUBE ─────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 6 — Lien Minikube ↔ Registry local"
+echo "  ETAPE 6 — Connexion Jenkins <-> Minikube"
 echo "════════════════════════════════════════════════════════════"
 
-# Tester la connectivité depuis Minikube
-if minikube ssh -- curl -sf "http://${HOST_IP}:5000/v2/" >/dev/null 2>&1; then
-    log "Minikube peut accéder au registry via ${HOST_IP}:5000"
+if docker ps --format '{{.Names}}' | grep -q '^jenkins$'; then
+    docker network connect minikube jenkins 2>/dev/null && \
+      log "Jenkins connecte au reseau minikube" || \
+      log "Jenkins deja connecte au reseau minikube"
 else
-    warn "Configuration de la route Minikube → Registry..."
-    # Ajouter une entrée hosts si nécessaire
-    minikube ssh -- "echo '${HOST_IP} host-registry' | sudo tee -a /etc/hosts"
+    warn "Container Jenkins non trouve — connecter manuellement apres docker compose up"
 fi
 
-# Configurer containerd dans Minikube pour le registry insecure
-minikube ssh -- "sudo mkdir -p /etc/containerd/certs.d/${HOST_IP}:5000"
-minikube ssh -- "echo '[host.\"http://${HOST_IP}:5000\"]
-  capabilities = [\"pull\", \"resolve\", \"push\"]
-  skip_verify = true' | sudo tee /etc/containerd/certs.d/${HOST_IP}:5000/hosts.toml > /dev/null"
-
-log "Minikube configuré pour pull depuis ${HOST_IP}:5000"
-
-# ─────────────── 7. CRÉER LES NAMESPACES K8S ─────────────────────────
+# ─────────────── 7. CREER LES NAMESPACES K8S ─────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 7 — Création des namespaces Kubernetes"
+echo "  ETAPE 7 — Creation des namespaces Kubernetes"
 echo "════════════════════════════════════════════════════════════"
 
 kubectl create namespace flexpay-staging --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace flexpay-prod    --dry-run=client -o yaml | kubectl apply -f -
-log "Namespaces flexpay-staging et flexpay-prod créés"
+log "Namespaces flexpay-staging et flexpay-prod crees"
 
-# ─────────────── 8. GÉNÉRER KUBECONFIG_BASE64 ─────────────────────────
+# ─────────────── 8. GENERER KUBECONFIG POUR JENKINS ──────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 8 — Génération du KUBECONFIG_BASE64"
+echo "  ETAPE 8 — Generation kubeconfig (certificats embarques)"
 echo "════════════════════════════════════════════════════════════"
 
 KUBECONFIG_PATH="${HOME}/.kube/config"
+KUBECONFIG_JENKINS="${HOME}/kubeconfig-jenkins.txt"
 
 if [ ! -f "$KUBECONFIG_PATH" ]; then
-    err "Kubeconfig introuvable à ${KUBECONFIG_PATH}"
+    err "Kubeconfig introuvable a ${KUBECONFIG_PATH}"
 fi
 
-KUBECONFIG_B64=$(cat "$KUBECONFIG_PATH" | base64 -w 0)
-log "KUBECONFIG_BASE64 généré (${#KUBECONFIG_B64} caractères)"
+kubectl config view --flatten > "$KUBECONFIG_JENKINS"
+log "Kubeconfig flatten genere : ${KUBECONFIG_JENKINS}"
+log "Uploader ce fichier dans Jenkins : Credentials -> Secret file -> ID: kubeconfig-file"
 
-# ─────────────── 9. ÉCRIRE LE .env ────────────────────────────────────
+KUBECONFIG_B64=$(base64 -w 0 < "$KUBECONFIG_PATH")
+
+# ─────────────── 9. SERVICE SYSTEMD MINIKUBE (DEMARRAGE AUTO) ────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  ÉTAPE 9 — Mise à jour du .env"
+echo "  ETAPE 9 — Service systemd Minikube (demarrage auto)"
 echo "════════════════════════════════════════════════════════════"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+sudo tee /etc/systemd/system/minikube.service > /dev/null << EOF
+[Unit]
+Description=Minikube Kubernetes Cluster
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=${CURRENT_USER}
+ExecStart=/usr/local/bin/minikube start --driver=docker --subnet=192.168.60.0/24 --insecure-registry="${HOST_IP}:5000"
+ExecStop=/usr/local/bin/minikube stop
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo tee /etc/systemd/system/minikube-jenkins.service > /dev/null << 'EOF'
+[Unit]
+Description=Connect Jenkins to Minikube network
+After=minikube.service docker.service
+Requires=minikube.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/bin/docker network connect minikube jenkins
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable minikube minikube-jenkins
+log "Services systemd crees et actives (minikube + minikube-jenkins)"
+
+# ─────────────── 10. ECRIRE LE .env ──────────────────────────────────
+echo ""
+echo "════════════════════════════════════════════════════════════"
+echo "  ETAPE 10 — Mise a jour du .env"
+echo "════════════════════════════════════════════════════════════"
+
 ENV_FILE="${SCRIPT_DIR}/.env"
 
 if [ -f "$ENV_FILE" ]; then
-    # Mettre à jour les valeurs auto-générées
     sed -i "s|^KUBECONFIG_BASE64=.*|KUBECONFIG_BASE64=${KUBECONFIG_B64}|" "$ENV_FILE"
     sed -i "s|^KUBECONFIG_PATH=.*|KUBECONFIG_PATH=${KUBECONFIG_PATH}|" "$ENV_FILE"
     sed -i "s|^HOST_IP=.*|HOST_IP=${HOST_IP}|" "$ENV_FILE"
-    log ".env mis à jour avec KUBECONFIG_BASE64 et HOST_IP"
+    log ".env mis a jour avec KUBECONFIG_BASE64 et HOST_IP"
 else
-    warn "Fichier .env non trouvé. Création depuis le template..."
     if [ -f "${SCRIPT_DIR}/.env.example" ]; then
         cp "${SCRIPT_DIR}/.env.example" "$ENV_FILE"
         sed -i "s|^KUBECONFIG_BASE64=.*|KUBECONFIG_BASE64=${KUBECONFIG_B64}|" "$ENV_FILE"
         sed -i "s|^KUBECONFIG_PATH=.*|KUBECONFIG_PATH=${KUBECONFIG_PATH}|" "$ENV_FILE"
-        log ".env créé — REMPLIR les valeurs manquantes avec : nano ${ENV_FILE}"
+        sed -i "s|^HOST_IP=.*|HOST_IP=${HOST_IP}|" "$ENV_FILE"
+        log ".env cree — REMPLIR les valeurs manquantes : nano ${ENV_FILE}"
     else
-        err ".env.example non trouvé dans ${SCRIPT_DIR}"
+        err ".env.example non trouve dans ${SCRIPT_DIR}"
     fi
 fi
 
-# ─────────────── 10. RÉSUMÉ ───────────────────────────────────────────
+# ─────────────── 11. RESUME ──────────────────────────────────────────
 MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "N/A")
-KUBECTL_PATH=$(which kubectl)
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  SETUP TERMINÉ"
+echo "  SETUP TERMINE"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 echo "  VM Ubuntu IP       : ${HOST_IP}"
 echo "  Registry local     : http://${HOST_IP}:5000"
 echo "  Minikube IP        : ${MINIKUBE_IP}"
-echo "  kubectl            : ${KUBECTL_PATH}"
-echo "  Kubeconfig         : ${KUBECONFIG_PATH}"
+echo "  Kubeconfig Jenkins : ${KUBECONFIG_JENKINS}"
 echo ""
-echo "  Prochaines étapes :"
-echo "  1. Compléter le .env :  nano ${ENV_FILE}"
-echo "  2. Lancer Jenkins :     docker compose up -d jenkins"
-echo "  3. Depuis le Mac :      http://${HOST_IP}:8080"
+echo "  Services systemd   : minikube + minikube-jenkins (demarrage auto)"
+echo ""
+echo "  Prochaines etapes :"
+echo "  1. Completer le .env :    nano ${ENV_FILE}"
+echo "  2. Lancer la stack :      docker compose up -d"
+echo "  3. Jenkins depuis Mac :   http://${HOST_IP}:8080"
+echo "  4. Charger JCasC :        Manage Jenkins -> Configuration as Code"
+echo "  5. Uploader kubeconfig :  ${KUBECONFIG_JENKINS} -> Credentials -> Secret file"
 echo ""
 echo "  Tester le registry :"
 echo "    docker pull nginx:alpine"
 echo "    docker tag nginx:alpine ${HOST_IP}:5000/test:latest"
 echo "    docker push ${HOST_IP}:5000/test:latest"
-echo "    kubectl run test --image=${HOST_IP}:5000/test:latest"
+echo "    minikube ssh -- curl -s http://${HOST_IP}:5000/v2/_catalog"
 echo ""
 echo "════════════════════════════════════════════════════════════"

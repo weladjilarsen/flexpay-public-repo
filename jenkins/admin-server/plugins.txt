@@ -1,49 +1,42 @@
 # ════════════════════════════════════════════════════════════════════════
 # plugins.txt — Plugins Jenkins pour la plateforme FlexPay
 #
-# Stack VM Ubuntu :
+# Jenkins 2.555.1 — VM Ubuntu :
 #   Traefik · Portainer · Redis · Prometheus · Grafana
 #   Jenkins · PgAdmin · RabbitMQ · Minikube · Registry local
 #
 # ── INSTALLATION ──────────────────────────────────────────────────────
 #
-# Étape 1 — Installer les 14 plugins REQUIS CASC en premier :
-#   Manage Jenkins → Plugins → Available plugins
-#   Cocher les 14 marqués ★ puis "Install and restart"
+# Etape 1 — Installer les 7 plugins REQUIS CASC en premier :
+#   Manage Jenkins -> Plugins -> Available plugins
+#   Cocher les 7 marques ★ puis "Install and restart"
 #
-# Étape 2 — Installer le reste des plugins (pipeline + utilitaires)
+# Etape 2 — Charger le JCasC :
+#   Manage Jenkins -> Configuration as Code -> Apply
 #
-# Étape 3 — Charger le JCasC :
-#   Manage Jenkins → Configuration as Code → Apply
+# Etape 3 — Installer le reste des plugins (pipeline + utilitaires)
 #
 # ════════════════════════════════════════════════════════════════════════
 
 
 # ══════════════════════════════════════════════════════════════════════
-#  ★ PLUGINS REQUIS POUR LE CASC (14)
-#  Sans eux, le chargement du jenkins-casc.yaml échoue.
-#  À installer EN PREMIER + redémarrer Jenkins.
+#  ★ PLUGINS REQUIS POUR LE CASC (7)
+#  Sans eux, le chargement du jenkins-casc.yaml echoue.
+#  A installer EN PREMIER + redemarrer Jenkins.
 # ══════════════════════════════════════════════════════════════════════
 
-configuration-as-code:latest            # ★ Le menu JCasC lui-même
-job-dsl:latest                          # ★ Seed jobs dans le JCasC
+configuration-as-code:latest            # ★ Le menu JCasC lui-meme
 role-strategy:latest                    # ★ authorizationStrategy: roleBased
 credentials:latest                      # ★ Gestion des credentials
 credentials-binding:latest              # ★ Injection credentials dans les builds
 plain-credentials:latest                # ★ Credentials string + file (kubeconfig)
-git:latest                              # ★ Section gitSCM
-github-branch-source:latest             # ★ GitHub source dans le seed job
-workflow-aggregator:latest              # ★ workflowBranchProjectFactory
-maven-plugin:latest                     # ★ tool: maven
-adoptopenjdk:latest                     # ★ tool: jdk (adoptOpenJdkInstaller)
-dependency-check-jenkins-plugin:latest  # ★ tool: dependencyCheck
-email-ext:latest                        # ★ Section emailext
-audit-trail:latest                      # ★ Section audit-trail
+git:latest                              # ★ Section scmGit
+workflow-aggregator:latest              # ★ Pipeline core
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  PLUGINS PIPELINE (Jenkinsfile)
-#  Nécessaires pour exécuter le pipeline CI/CD.
+#  Necessaires pour executer le pipeline CI/CD.
 # ══════════════════════════════════════════════════════════════════════
 
 # ── Pipeline core ─────────────────────────────────────────────────────
@@ -55,41 +48,49 @@ pipeline-milestone-step:latest          # Milestones
 pipeline-utility-steps:latest           # Utilitaires (readMavenPom, etc.)
 
 # ── Git / GitHub ──────────────────────────────────────────────────────
-github:latest                           # Intégration GitHub (webhooks)
+github:latest                           # Integration GitHub (webhooks)
+github-branch-source:latest             # GitHub source dans multibranch job
 github-checks:latest                    # Statuts checks sur les PR
 
 # ── Docker (build via docker.sock) ────────────────────────────────────
 docker-workflow:latest                  # Docker steps dans le pipeline
-docker-commons:latest                   # Utilitaires Docker partagés
+docker-commons:latest                   # Utilitaires Docker partages
 
-# ── Kubernetes (déploiement sur Minikube) ─────────────────────────────
+# ── Kubernetes (deploiement sur Minikube) ─────────────────────────────
 kubernetes-cli:latest                   # kubectl dans le pipeline
 
 # ── Build ─────────────────────────────────────────────────────────────
+maven-plugin:latest                     # tool: maven dans le Jenkinsfile
+adoptopenjdk:latest                     # tool: jdk dans le Jenkinsfile
 config-file-provider:latest             # Fichiers de config (settings.xml)
 
-# ── Tests & Qualité ───────────────────────────────────────────────────
+# ── Tests & Qualite ───────────────────────────────────────────────────
 junit:latest                            # Rapports JUnit (mvn test)
 jacoco:latest                           # Rapports couverture de code
 warnings-ng:latest                      # Analyse statique (SpotBugs, PMD)
-test-results-analyzer:latest            # Tendances des résultats de tests
+test-results-analyzer:latest            # Tendances des resultats de tests
+dependency-check-jenkins-plugin:latest  # Scan securite dependances (desactive)
 
 # ── Notifications ─────────────────────────────────────────────────────
 mailer:latest                           # Email de base
+email-ext:latest                        # Email etendu (configurer via UI)
+
+# ── Seed Jobs ─────────────────────────────────────────────────────────
+job-dsl:latest                          # Seed jobs (configurer via UI)
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  PLUGINS INFRASTRUCTURE
-#  Intégration avec la stack Docker (Prometheus, Grafana, Traefik).
+#  Integration avec la stack Docker (Prometheus, Grafana, Traefik).
 # ══════════════════════════════════════════════════════════════════════
 
-# ── Monitoring (→ Prometheus + Grafana de la stack) ───────────────────
+# ── Monitoring (-> Prometheus + Grafana de la stack) ───────────────────
 prometheus:latest                       # Expose /prometheus pour le scrape
-metrics:latest                          # Métriques JVM Jenkins
+metrics:latest                          # Metriques JVM Jenkins
 disk-usage:latest                       # Surveillance espace disque
 
-# ── Sécurité ──────────────────────────────────────────────────────────
-antisamy-markup-formatter:latest        # Formatage HTML sécurisé
+# ── Securite ──────────────────────────────────────────────────────────
+antisamy-markup-formatter:latest        # Formatage HTML securise
 
 # ── UI / Utilitaires ─────────────────────────────────────────────────
 timestamper:latest                      # Timestamps dans les logs de build
@@ -98,5 +99,5 @@ build-timeout:latest                    # Timeout des builds
 rebuild:latest                          # Bouton relancer un build
 ansicolor:latest                        # Couleurs ANSI dans les logs
 locale:latest                           # Localisation (fr)
-dark-theme:latest                       # Thème sombre
+dark-theme:latest                       # Theme sombre
 blueocean:latest                        # Interface moderne Blue Ocean

@@ -23,6 +23,8 @@ networks:
     driver: bridge
   backend:
     driver: bridge
+  minikube:
+    external: true
 
 # =========================
 # VOLUMES
@@ -200,8 +202,8 @@ services:
       GITHUB_USER: ${GITHUB_USER}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       GITHUB_ORG: ${GITHUB_ORG:-flexpay}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      ADMIN_SERVER_USERNAME: ${ADMIN_SERVER_USERNAME:-admin}
+      ADMIN_SERVER_PASSWORD: ${ADMIN_SERVER_PASSWORD:-admin}
       KUBECONFIG_BASE64: ${KUBECONFIG_BASE64}
       EMAIL_RECIPIENTS: ${EMAIL_RECIPIENTS:-devops@flexpay.com}
       HOST_IP: ${HOST_IP}
@@ -214,6 +216,7 @@ services:
     networks:
       - frontend
       - backend
+      - minikube
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jenkins.rule=Host(`jenkins.flexpay.com`)"
