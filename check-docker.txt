@@ -1,23 +1,25 @@
-docker network disconnect minikube jenkins
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ docker network rm minikube
-minikube
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube start --driver=docker --subnet=192.168.60.0/24
-😄  minikube v1.38.1 sur Ubuntu 26.04
-✨  Utilisation du pilote docker basé sur le profil existant
-👍  Démarrage du nœud "minikube" primary control-plane dans le cluster "minikube"
-🚜  Extraction de l'image de base v0.0.50...
-🤷  docker "minikube" container est manquant, il va être recréé.
-🔥  Création de docker container (CPU=2, Memory=3072Mo) ...
-🐳  Préparation de Kubernetes v1.35.1 sur Docker 29.2.1...
-🔗  Configuration de bridge CNI (Container Networking Interface)...
-🔎  Vérification des composants Kubernetes...
-    ▪ Utilisation de l'image gcr.io/k8s-minikube/storage-provisioner:v5
-🌟  Modules activés: default-storageclass, storage-provisioner
-🏄  Terminé ! kubectl est maintenant configuré pour utiliser "minikube" cluster et espace de noms "default" par défaut.
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube status
-minikube
-type: Control Plane
-host: Running
-kubelet: Running
-apiserver: Running
-kubeconfig: Configured
+kubectl describe pod -n flexpay-prod -l app.kubernetes.io/name=flexpay-admin-server | tail -20
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-6wvz4 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-6wvz4:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ kubectl get pods -n flexpay-prod
+NAME                                    READY   STATUS             RESTARTS   AGE
+flexpay-admin-server-77594746c9-9ljsh   0/1     ImagePullBackOff   0          6m24s
+flexpay-admin-server-7b5f667799-mcwng   0/1     ErrImagePull       0          6m26s
