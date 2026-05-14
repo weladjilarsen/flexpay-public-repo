@@ -1,4 +1,50 @@
 jenkins:
-  systemMessage: "Jenkins CI/CD - FlexPay Platform - Test JCasC"
+  systemMessage: "Jenkins CI/CD - FlexPay Platform"
   numExecutors: 2
   mode: NORMAL
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_USER:-admin}"
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+          name: "Jenkins Admin"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: "JAVA_HOME"
+            value: "/opt/java/openjdk"
+          - key: "MAVEN_OPTS"
+            value: "-Xmx1024m"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-credentials"
+              username: "${GITHUB_USER:-weladjilarsen}"
+              password: "${GITHUB_TOKEN:-token}"
+              description: "GitHub - acces aux repos FlexPay"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "admin-server-credentials"
+              username: "${ADMIN_SERVER_USERNAME:-admin}"
+              password: "${ADMIN_SERVER_PASSWORD:-changeme}"
+              description: "Spring Security credentials pour admin-server"
+
+unclassified:
+  emailext:
+    defaultRecipients: "${EMAIL_RECIPIENTS:-devops@flexpay.com}"
+    defaultContentType: "text/plain"
+    defaultSubject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS"
+  gitSCM:
+    globalConfigName: "Jenkins CI"
+    globalConfigEmail: "ci@flexpay.com"
