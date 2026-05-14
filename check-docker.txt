@@ -1,8 +1,37 @@
-ocker network connect minikube jenkins
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ docker network ls | grep minikube
-711a124df857   minikube              bridge    local
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ docker exec jenkins curl -k https://192.168.49.2:8443/version
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-curl: (7) Failed to connect to 192.168.49.2 port 8443 after 0 ms: Could not connect to server
+minikube status
+minikube
+type: Control Plane
+host: Stopped
+kubelet: Stopped
+apiserver: Stopped
+kubeconfig: Stopped
+
+larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube start --driver=docker
+😄  minikube v1.38.1 sur Ubuntu 26.04
+✨  Utilisation du pilote docker basé sur le profil existant
+👍  Démarrage du nœud "minikube" primary control-plane dans le cluster "minikube"
+🚜  Extraction de l'image de base v0.0.50...
+🔄  Redémarrage du docker container existant pour "minikube" ...
+🤦  StartHost a échoué, mais va réessayer : driver start: start: docker start minikube: exit status 1
+stdout:
+
+stderr:
+Error response from daemon: failed to set up container networking: Address already in use
+failed to start containers: minikube
+
+🔄  Redémarrage du docker container existant pour "minikube" ...
+😿  Échec du démarrage de docker container. L'exécution de "minikube delete" peut résoudre le problème : driver start: start: docker start minikube: exit status 1
+stdout:
+
+stderr:
+Error response from daemon: failed to set up container networking: Address already in use
+failed to start containers: minikube
+
+
+❌  Fermeture en raison de GUEST_PROVISION : error provisioning guest: Failed to start host: driver start: start: docker start minikube: exit status 1
+stdout:
+
+stderr:
+Error response from daemon: failed to set up container networking: Address already in use
+failed to start containers: minikube
+
