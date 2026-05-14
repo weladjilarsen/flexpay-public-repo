@@ -1,1 +1,16 @@
 docker network ls && docker network inspect bridge --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' && ip addr show | grep "inet "
+NETWORK ID     NAME                  DRIVER    SCOPE
+69d6adfa5f20   bridge                bridge    local
+9a2e4c3e0fb7   host                  host      local
+82f487c8d67c   minikube              bridge    local
+696ab0950cda   none                  null      local
+b526a1a82847   prod-stack_backend    bridge    local
+c2031b4cf5e6   prod-stack_frontend   bridge    local
+172.17.0.0/16
+    inet 127.0.0.1/8 scope host lo
+    inet 192.168.11.129/24 brd 192.168.11.255 scope global dynamic noprefixroute wlp1s0
+    inet 100.67.178.90/32 scope global tailscale0
+    inet 192.168.49.1/24 brd 192.168.49.255 scope global br-82f487c8d67c
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-b526a1a82847
+    inet 172.19.0.1/16 brd 172.19.255.255 scope global br-c2031b4cf5e6
