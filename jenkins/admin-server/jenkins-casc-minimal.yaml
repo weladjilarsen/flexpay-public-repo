@@ -1,0 +1,4 @@
+jenkins:
+  systemMessage: "Jenkins CI/CD - FlexPay Platform - Test JCasC"
+  numExecutors: 2
+  mode: NORMAL
