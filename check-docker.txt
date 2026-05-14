@@ -1,44 +1,31 @@
-s -la /usr/bin/docker
--rwxr-xr-x 1 root root 45526415 May  6 18:07 /usr/bin/docker
-
-file /usr/bin/docker
-/usr/bin/docker: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, Go BuildID=JzRwA3rN2C1-_jAnvnPO/Ff_mIrTUiqQ-NkWHX_7I/Ku8-tYJKUYBbnHATndzO/Rn0IGrBFtN_2yR57sw8g, BuildID[sha1]=934f92e6cb8eec47a869146d4cda52495f08354d, with debug_info, not stripped
-
-
-docker inspect jenkins --format '{{json .Mounts}}' | python3 -m json.tool
-[
-    {
-        "Type": "bind",
-        "Source": "/var/run/docker.sock",
-        "Destination": "/var/run/docker.sock",
-        "Mode": "rw",
-        "RW": true,
-        "Propagation": "rprivate"
-    },
-    {
-        "Type": "bind",
-        "Source": "/usr/local/bin/kubectl",
-        "Destination": "/usr/local/bin/kubectl",
-        "Mode": "ro",
-        "RW": false,
-        "Propagation": "rprivate"
-    },
-    {
-        "Type": "bind",
-        "Source": "/home/larsen/.kube/config",
-        "Destination": "/var/jenkins_home/.kube/config",
-        "Mode": "ro",
-        "RW": false,
-        "Propagation": "rprivate"
-    },
-    {
-        "Type": "volume",
-        "Name": "prod-stack_jenkins_data",
-        "Source": "/var/lib/docker/volumes/prod-stack_jenkins_data/_data",
-        "Destination": "/var/jenkins_home",
-        "Driver": "local",
-        "Mode": "rw",
-        "RW": true,
-        "Propagation": ""
-    }
-]
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: /home/larsen/.minikube/ca.crt
+    extensions:
+    - extension:
+        last-update: Wed, 13 May 2026 17:50:00 +01
+        provider: minikube.sigs.k8s.io
+        version: v1.38.1
+      name: cluster_info
+    server: https://192.168.49.2:8443
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    extensions:
+    - extension:
+        last-update: Wed, 13 May 2026 17:50:00 +01
+        provider: minikube.sigs.k8s.io
+        version: v1.38.1
+      name: context_info
+    namespace: default
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+users:
+- name: minikube
+  user:
+    client-certificate: /home/larsen/.minikube/profiles/minikube/client.crt
+    client-key: /home/larsen/.minikube/profiles/minikube/client.key
