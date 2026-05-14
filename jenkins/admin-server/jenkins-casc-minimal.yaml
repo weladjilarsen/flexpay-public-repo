@@ -33,6 +33,6 @@ credentials:
               description: "Spring Security credentials pour admin-server"
 
 unclassified:
-  gitSCM:
+  scmGit:
     globalConfigName: "Jenkins CI"
     globalConfigEmail: "ci@flexpay.com"
