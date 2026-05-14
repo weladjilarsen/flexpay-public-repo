@@ -1,15 +1,3 @@
-minikube delete
-🔥  Suppression de "minikube" dans docker...
-🔥  Suppression du conteneur "minikube" ...
-🔥  Suppression du répertoire /home/larsen/.minikube/machines/minikube…
-💀  Le cluster "minikube" a été supprimé.
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ minikube start --driver=docker
-😄  minikube v1.38.1 sur Ubuntu 26.04
-✨  Utilisation du pilote docker basé sur la configuration de l'utilisateur
-❗  Starting v1.39.0, minikube will default to "containerd" container runtime. See #21973 for more info.
-📌  Utilisation du pilote Docker avec le privilège root
-👍  Démarrage du nœud "minikube" primary control-plane dans le cluster "minikube"
-🚜  Extraction de l'image de base v0.0.50...
-🔥  Création de docker container (CPU=2, Memory=3072Mo) ...
-
-❌  Fermeture en raison de GUEST_PROVISION : error provisioning guest: Failed to start host: creating host: create: creating: create kic node: create container: can't create with that IP, address already in use
+docker network rm minikube
+Error response from daemon: error while removing network: network minikube has active endpoints (name:"jenkins" id:"2bc488c541d1")
+exit status 1
