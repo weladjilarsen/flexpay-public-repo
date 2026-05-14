@@ -4,29 +4,34 @@
 #
 # Architecture :
 #   - VM Ubuntu avec Docker Engine
-#   - Jenkins = container Docker (docker.sock monté)
+#   - Jenkins = container Docker (docker.sock monte)
 #   - Registry Docker local = localhost:5000 (sans auth)
-#   - Minikube (Docker driver) sur la même VM
+#   - Minikube (Docker driver) sur la meme VM
 #
 # Chargement depuis le Mac :
-#   Manage Jenkins → Configuration as Code → Replace configuration
+#   Manage Jenkins -> Configuration as Code -> Replace configuration
 #
-# APRÈS le chargement JCasC, créer manuellement :
-#   Manage Jenkins → Credentials → System → Global credentials → Add
-#   Kind : Secret file | ID : kubeconfig-file | File : votre kubeconfig
+# APRES le chargement JCasC, creer manuellement :
+#   1. Credential kubeconfig :
+#      Manage Jenkins -> Credentials -> System -> Global -> Add
+#      Kind : Secret file | ID : kubeconfig-file | File : kubeconfig
+#   2. Outils (Maven, JDK, Dependency-Check) :
+#      Manage Jenkins -> Tools
+#   3. Job multibranch :
+#      New Item -> Multibranch Pipeline -> flexpay-admin-server
 # ════════════════════════════════════════════════════════════════════════
 
 jenkins:
 
-  # ─────────────── CONFIGURATION SYSTÈME ──────────────────────────────
+  # ─────────────── CONFIGURATION SYSTEME ──────────────────────────────
   systemMessage: >-
-    Jenkins CI/CD — FlexPay Platform
+    Jenkins CI/CD - FlexPay Platform
     VM Ubuntu / Docker Engine + Registry local + Kubernetes
 
   numExecutors: 2
   mode: NORMAL
 
-  # ─────────────── SÉCURITÉ ───────────────────────────────────────────
+  # ─────────────── SECURITE ───────────────────────────────────────────
   securityRealm:
     local:
       allowsSignup: false
@@ -46,7 +51,7 @@ jenkins:
             entries:
               - user: "${JENKINS_ADMIN_USER:-admin}"
           - name: "developer"
-            description: "Développeurs — lecture + build"
+            description: "Developpeurs - lecture + build"
             permissions:
               - "Overall/Read"
               - "Job/Build"
@@ -87,12 +92,7 @@ credentials:
               id: "github-credentials"
               username: "${GITHUB_USER:-weladjilarsen}"
               password: "${GITHUB_TOKEN:-token}"
-              description: "GitHub — accès aux repos FlexPay"
-
-          # ── Kubeconfig (cluster K8s local) ───────────────────────────
-          # IMPORTANT : le credential "kubeconfig-file" (Secret file) doit
-          # être créé manuellement via l'UI Jenkins après le chargement JCasC.
-          # Manage Jenkins → Credentials → Add → Secret file → ID: kubeconfig-file
+              description: "GitHub - acces aux repos FlexPay"
 
           # ── Credentials du microservice ──────────────────────────────
           - usernamePassword:
@@ -101,37 +101,6 @@ credentials:
               username: "${ADMIN_SERVER_USERNAME:-admin}"
               password: "${ADMIN_SERVER_PASSWORD:-changeme}"
               description: "Spring Security credentials pour admin-server"
-
-# ═══════════════════════════════════════════════════════════════════════
-# OUTILS (TOOLS)
-# ═══════════════════════════════════════════════════════════════════════
-tool:
-  maven:
-    installations:
-      - name: "maven-3.9"
-        properties:
-          - installSource:
-              installers:
-                - maven:
-                    id: "3.9.9"
-
-  jdk:
-    installations:
-      - name: "jdk-21"
-        properties:
-          - installSource:
-              installers:
-                - adoptOpenJdkInstaller:
-                    id: "jdk-21.0.5+11"
-
-  dependencyCheck:
-    installations:
-      - name: "dependency-check"
-        properties:
-          - installSource:
-              installers:
-                - dependencyCheckInstaller:
-                    id: "10.0.4"
 
 # ═══════════════════════════════════════════════════════════════════════
 # CONFIGURATION DES PLUGINS
@@ -148,50 +117,3 @@ unclassified:
   gitSCM:
     globalConfigName: "Jenkins CI"
     globalConfigEmail: "ci@flexpay.com"
-
-  # ── Audit Trail ──────────────────────────────────────────────────────
-  audit-trail:
-    logBuildCause: true
-    pattern: ".*/(?:configSubmit|doDelete|postBuildResult|enable|disable|cancelQueue|stop|toggleLogKeep|doWipeOutWorkspace|createItem|createView|toggleOffline|cancelQuietDown|quietDown|restart|exit|safeExit).*"
-
-# ═══════════════════════════════════════════════════════════════════════
-# JOBS (Seed Job)
-# ═══════════════════════════════════════════════════════════════════════
-jobs:
-  - script: |
-      multibranchPipelineJob('flexpay-admin-server') {
-        displayName('FlexPay Admin Server')
-        description('CI/CD — Docker build + K8s deploy (registry local)')
-
-        branchSources {
-          github {
-            id('flexpay-admin-server-github')
-            repoOwner('${GITHUB_ORG:-flexpay}')
-            repository('flexpay-admin-server-service')
-            credentialsId('github-credentials')
-
-            buildForkPRMerge(true)
-            buildOriginBranch(true)
-            buildOriginBranchWithPR(false)
-            buildOriginPRMerge(true)
-          }
-        }
-
-        orphanedItemStrategy {
-          discardOldItems {
-            numToKeep(10)
-          }
-        }
-
-        triggers {
-          periodicFolderTrigger {
-            interval('5m')
-          }
-        }
-
-        factory {
-          workflowBranchProjectFactory {
-            scriptPath('Jenkinsfile')
-          }
-        }
-      }
