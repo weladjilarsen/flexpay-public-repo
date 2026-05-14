@@ -144,18 +144,6 @@ unclassified:
     defaultContentType: "text/plain"
     defaultSubject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS"
 
-  # ── Global Pipeline Libraries ────────────────────────────────────────
-  globalLibraries:
-    libraries:
-      - name: "flexpay-shared-library"
-        defaultVersion: "main"
-        retriever:
-          modernSCM:
-            scm:
-              git:
-                remote: "${SHARED_LIBRARY_REPO:-https://github.com/flexpay/jenkins-shared-library.git}"
-                credentialsId: "github-credentials"
-
   # ── Git ──────────────────────────────────────────────────────────────
   gitSCM:
     globalConfigName: "Jenkins CI"
