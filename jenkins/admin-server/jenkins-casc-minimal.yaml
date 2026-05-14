@@ -14,3 +14,20 @@ jenkins:
   authorizationStrategy:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-credentials"
+              username: "weladjilarsen"
+              password: "token-placeholder"
+              description: "GitHub - acces aux repos FlexPay"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "admin-server-credentials"
+              username: "admin"
+              password: "changeme"
+              description: "Spring Security credentials pour admin-server"
