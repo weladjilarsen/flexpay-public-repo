@@ -33,6 +33,10 @@ credentials:
               description: "Spring Security credentials pour admin-server"
 
 unclassified:
+  emailext:
+    defaultRecipients: "devops@flexpay.com"
+    defaultContentType: "text/plain"
+    defaultSubject: "Build Notification"
   scmGit:
     globalConfigName: "Jenkins CI"
     globalConfigEmail: "ci@flexpay.com"
