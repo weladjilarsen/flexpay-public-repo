@@ -182,8 +182,9 @@ services:
     volumes:
       # Jenkins data
       - jenkins_data:/var/jenkins_home
-      # Docker socket — build/push images via Docker Engine de la VM
+      # Docker socket + CLI — build/push images via Docker Engine de la VM
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
       # kubectl — déploiement sur Minikube (installé par setup.sh)
       - /usr/local/bin/kubectl:/usr/local/bin/kubectl:ro
       # kubeconfig — accès au cluster Minikube
