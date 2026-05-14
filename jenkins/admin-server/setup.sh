@@ -164,7 +164,6 @@ else
       --driver=docker \
       --cpus=2 \
       --memory=4096 \
-      --subnet=192.168.60.0/24 \
       --insecure-registry="${HOST_IP}:5000"
     log "Minikube demarre"
 fi
@@ -231,7 +230,7 @@ Requires=docker.service
 Type=oneshot
 RemainAfterExit=yes
 User=${CURRENT_USER}
-ExecStart=/usr/local/bin/minikube start --driver=docker --subnet=192.168.60.0/24 --insecure-registry="${HOST_IP}:5000"
+ExecStart=/usr/local/bin/minikube start --driver=docker --insecure-registry="${HOST_IP}:5000"
 ExecStop=/usr/local/bin/minikube stop
 
 [Install]
