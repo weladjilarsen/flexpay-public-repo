@@ -1,11 +1,7 @@
-kubectl get deployment -n flexpay-prod 
-NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
-flexpay-admin-server   0/1     1            0           22m
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ kubectl get events -n flexpay-prod --sort-by='.lasttimestamp' | tail -20
-No resources found in flexpay-prod namespace.
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ kubectl get pods -n flexpay-staging
-No resources found in flexpay-staging namespace.
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ kubectl get pods --all-namespaces | grep flexpay
-flexpay-prod   flexpay-admin-server-6768b8c448-nzfz7   0/1     ImagePullBackOff   0             4m50s
-flexpay-prod   flexpay-admin-server-77594746c9-n9x69   0/1     ImagePullBackOff   0             8m16s
-larsen@larsen-300E4C-300E5C-300E7C:~/prod-stack$ 
+kubectl describe pod flexpay-admin-server-6768b8c448-nzfz7 -n flexpay-prod | grep -A5 "Events"
+Events:
+  Type     Reason     Age                    From               Message
+  ----     ------     ----                   ----               -------
+  Normal   Scheduled  7m25s                  default-scheduler  Successfully assigned flexpay-prod/flexpay-admin-server-6768b8c448-nzfz7 to minikube
+  Normal   Pulling    4m22s (x5 over 7m21s)  kubelet            spec.containers{flexpay-admin-server}: Pulling image "100.67.178.90:5000/flexpay-admin-server:17"
+  Warning  Failed     4m22s (x5 over 7m21s)  kubelet            spec.containers{flexpay-admin-server}: Failed to pull image "100.67.178.90:5000/flexpay-admin-server:17": Error response from daemon: Get "https://100.67.178.90:5000/v2/": http: server gave HTTP response to HTTPS client
