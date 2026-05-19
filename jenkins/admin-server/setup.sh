@@ -65,36 +65,31 @@ echo "════════════════════════�
 DAEMON_JSON="/etc/docker/daemon.json"
 INSECURE_ENTRY="${HOST_IP}:5000"
 
-if [ -f "$DAEMON_JSON" ] && grep -q "$INSECURE_ENTRY" "$DAEMON_JSON"; then
-    log "Docker daemon deja configure pour ${INSECURE_ENTRY}"
-else
-    warn "Configuration de Docker pour accepter le registry local..."
-    sudo mkdir -p /etc/docker
+warn "Configuration de Docker (insecure registry + plages IP fixes)..."
+sudo mkdir -p /etc/docker
+[ -f "$DAEMON_JSON" ] && sudo cp "$DAEMON_JSON" "${DAEMON_JSON}.bak"
 
-    if [ -f "$DAEMON_JSON" ]; then
-        sudo cp "$DAEMON_JSON" "${DAEMON_JSON}.bak"
-        sudo python3 -c "
+# Ecrire la configuration complete a chaque execution pour garantir l'idempotence.
+# default-address-pools fixe les plages des reseaux bridge Docker a 172.20.x.x,
+# separees de la plage Minikube (192.168.49.x) — evite "Address already in use".
+sudo python3 -c "
 import json
-with open('$DAEMON_JSON') as f:
-    cfg = json.load(f)
-registries = cfg.get('insecure-registries', [])
-if '$INSECURE_ENTRY' not in registries:
-    registries.append('$INSECURE_ENTRY')
-if 'localhost:5000' not in registries:
-    registries.append('localhost:5000')
-cfg['insecure-registries'] = registries
+try:
+    with open('$DAEMON_JSON') as f:
+        cfg = json.load(f)
+except Exception:
+    cfg = {}
+
+cfg['insecure-registries'] = ['localhost:5000', '${INSECURE_ENTRY}']
+cfg['bip'] = '172.17.0.1/24'
+cfg['default-address-pools'] = [{'base': '172.20.0.0/16', 'size': 24}]
+
 with open('$DAEMON_JSON', 'w') as f:
     json.dump(cfg, f, indent=2)
 "
-    else
-        echo '{
-  "insecure-registries": ["localhost:5000", "'${INSECURE_ENTRY}'"]
-}' | sudo tee "$DAEMON_JSON" > /dev/null
-    fi
 
-    sudo systemctl restart docker
-    log "Docker redemarre avec insecure-registries: localhost:5000, ${INSECURE_ENTRY}"
-fi
+sudo systemctl restart docker
+log "Docker configure : registry=${INSECURE_ENTRY}, bip=172.17.0.1/24, pool=172.20.0.0/16"
 
 # ─────────────── 3. DEMARRER LE REGISTRY ──────────────────────────────
 echo ""
@@ -156,15 +151,58 @@ echo "════════════════════════�
 
 MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
 
-if [ "$MINIKUBE_STATUS" = "Running" ]; then
-    log "Minikube deja en cours d'execution"
-else
-    warn "Demarrage de Minikube (driver Docker)..."
+minikube_start() {
     minikube start \
       --driver=docker \
       --cpus=2 \
       --memory=4096 \
       --insecure-registry="${HOST_IP}:5000"
+}
+
+if [ "$MINIKUBE_STATUS" = "Running" ]; then
+    log "Minikube deja en cours d'execution"
+else
+    # Nettoyage complet : supprimer le container potentiellement corrompu
+    # Les donnees du cluster persistent dans ~/.minikube, minikube start les reutilise
+    for ctr in $(docker network inspect minikube --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+        [ "$ctr" = "minikube" ] && continue
+        docker network disconnect -f minikube "$ctr" 2>/dev/null || true
+    done
+    docker rm -f minikube 2>/dev/null || true
+    docker network rm minikube 2>/dev/null || true
+    for iface in $(ip -o addr show | grep '192\.168\.49\.' | awk '{print $2}' | tr -d ':'); do
+        sudo ip link set "$iface" down 2>/dev/null || true
+        sudo ip link delete "$iface" 2>/dev/null || true
+    done
+
+    warn "Demarrage de Minikube (driver Docker)..."
+    if ! minikube_start 2>&1; then
+        warn "Echec du demarrage — nettoyage complet..."
+
+        # 1. Supprimer le profil Minikube corrompu
+        minikube delete 2>/dev/null || true
+
+        # 2. Deconnecter tous les containers du reseau "minikube" avant de le supprimer
+        #    (docker network rm echoue silencieusement si des containers y sont encore attaches)
+        for ctr in $(docker network inspect minikube --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+            docker network disconnect -f minikube "$ctr" 2>/dev/null || true
+        done
+        docker network rm minikube 2>/dev/null || true
+
+        # 3. Supprimer l'interface bridge kernel residuelle (br-xxxxxxxx sur 192.168.49.x)
+        #    qui persiste meme apres docker network rm quand le reseau etait en cours d'utilisation
+        for iface in $(ip -o addr show | grep '192\.168\.49\.' | awk '{print $2}' | tr -d ':'); do
+            warn "Suppression interface kernel orpheline : ${iface}"
+            sudo ip link set "$iface" down 2>/dev/null || true
+            sudo ip link delete "$iface" 2>/dev/null || true
+        done
+
+        # 4. Attendre la liberation complete des ressources reseau
+        sleep 3
+
+        warn "Nouveau demarrage de Minikube apres nettoyage complet..."
+        minikube_start
+    fi
     log "Minikube demarre"
 fi
 
@@ -202,17 +240,20 @@ echo "  ETAPE 8 — Generation kubeconfig (certificats embarques)"
 echo "════════════════════════════════════════════════════════════"
 
 KUBECONFIG_PATH="${HOME}/.kube/config"
-KUBECONFIG_JENKINS="${HOME}/kubeconfig-jenkins.txt"
+KUBECONFIG_EMBEDDED="${HOME}/kubeconfig-embedded.txt"
 
 if [ ! -f "$KUBECONFIG_PATH" ]; then
     err "Kubeconfig introuvable a ${KUBECONFIG_PATH}"
 fi
 
-kubectl config view --flatten > "$KUBECONFIG_JENKINS"
-log "Kubeconfig flatten genere : ${KUBECONFIG_JENKINS}"
-log "Uploader ce fichier dans Jenkins : Credentials -> Secret file -> ID: kubeconfig-file"
+# Kubeconfig avec certificats embarques (pour le credential Jenkins kubeconfig-file)
+kubectl config view --flatten > "$KUBECONFIG_EMBEDDED"
+log "Kubeconfig avec certs embarques genere : ${KUBECONFIG_EMBEDDED}"
 
+# KUBECONFIG_BASE64        : kubeconfig brut avec chemins de fichiers (pour kubectl sur la VM)
+# KUBECONFIG_EMBEDDED_B64  : kubeconfig avec certs embarques en base64 (credential Jenkins)
 KUBECONFIG_B64=$(base64 -w 0 < "$KUBECONFIG_PATH")
+KUBECONFIG_EMBEDDED_B64=$(base64 -w 0 < "$KUBECONFIG_EMBEDDED")
 
 # ─────────────── 9. SERVICE SYSTEMD MINIKUBE (DEMARRAGE AUTO) ────────
 echo ""
@@ -220,18 +261,54 @@ echo "════════════════════════�
 echo "  ETAPE 9 — Service systemd Minikube (demarrage auto)"
 echo "════════════════════════════════════════════════════════════"
 
+# Script de pre-nettoyage execute en root avant chaque demarrage de Minikube.
+# Supprime le container et le reseau minikube pour repartir proprement.
+# Les donnees du cluster persistent dans ~/.minikube — minikube start les reutilise.
+sudo tee /usr/local/bin/minikube-preclean.sh > /dev/null << 'SCRIPT'
+#!/bin/bash
+# Nettoyage complet avant demarrage de Minikube.
+# Apres un reboot non-propre, l'etat interne du container (Docker-in-Docker)
+# peut etre corrompu. On supprime le container pour forcer une recreation propre.
+
+# 1. Deconnecter les containers tiers (ex: jenkins) du reseau minikube
+for ctr in $(docker network inspect minikube --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+    [ "$ctr" = "minikube" ] && continue
+    docker network disconnect -f minikube "$ctr" 2>/dev/null || true
+done
+
+# 2. Supprimer le container minikube corrompu (les donnees persistent dans ~/.minikube)
+docker rm -f minikube 2>/dev/null || true
+
+# 3. Supprimer le reseau pour eviter "Address already in use"
+docker network rm minikube 2>/dev/null || true
+
+# 4. Supprimer les interfaces bridge kernel residuelles
+for iface in $(ip -o addr show | grep '192\.168\.49\.' | awk '{print $2}' | tr -d ':'); do
+    ip link set "$iface" down 2>/dev/null || true
+    ip link delete "$iface" 2>/dev/null || true
+done
+exit 0
+SCRIPT
+sudo chmod +x /usr/local/bin/minikube-preclean.sh
+log "Script de nettoyage reseau cree : /usr/local/bin/minikube-preclean.sh"
+
 sudo tee /etc/systemd/system/minikube.service > /dev/null << EOF
 [Unit]
 Description=Minikube Kubernetes Cluster
 After=docker.service
 Requires=docker.service
+Before=shutdown.target reboot.target halt.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-User=${CURRENT_USER}
-ExecStart=/usr/local/bin/minikube start --driver=docker --insecure-registry="${HOST_IP}:5000"
-ExecStop=/usr/local/bin/minikube stop
+TimeoutStartSec=300
+TimeoutStopSec=120
+ExecStartPre=/usr/local/bin/minikube-preclean.sh
+ExecStart=/usr/bin/su - ${CURRENT_USER} -c '/usr/local/bin/minikube start --driver=docker --insecure-registry="${HOST_IP}:5000" --wait=all --delete-on-failure'
+ExecStartPost=-/usr/bin/su - ${CURRENT_USER} -c '/usr/local/bin/minikube update-context'
+ExecStartPost=-/usr/bin/docker network connect minikube jenkins
+ExecStop=/usr/bin/su - ${CURRENT_USER} -c '/usr/local/bin/minikube stop'
 
 [Install]
 WantedBy=multi-user.target
@@ -267,13 +344,15 @@ ENV_FILE="${SCRIPT_DIR}/.env"
 
 if [ -f "$ENV_FILE" ]; then
     sed -i "s|^KUBECONFIG_BASE64=.*|KUBECONFIG_BASE64=${KUBECONFIG_B64}|" "$ENV_FILE"
+    sed -i "s|^KUBECONFIG_EMBEDDED_B64=.*|KUBECONFIG_EMBEDDED_B64=${KUBECONFIG_EMBEDDED_B64}|" "$ENV_FILE"
     sed -i "s|^KUBECONFIG_PATH=.*|KUBECONFIG_PATH=${KUBECONFIG_PATH}|" "$ENV_FILE"
     sed -i "s|^HOST_IP=.*|HOST_IP=${HOST_IP}|" "$ENV_FILE"
-    log ".env mis a jour avec KUBECONFIG_BASE64 et HOST_IP"
+    log ".env mis a jour avec KUBECONFIG_BASE64, KUBECONFIG_EMBEDDED_B64 et HOST_IP"
 else
     if [ -f "${SCRIPT_DIR}/.env.example" ]; then
         cp "${SCRIPT_DIR}/.env.example" "$ENV_FILE"
         sed -i "s|^KUBECONFIG_BASE64=.*|KUBECONFIG_BASE64=${KUBECONFIG_B64}|" "$ENV_FILE"
+        sed -i "s|^KUBECONFIG_EMBEDDED_B64=.*|KUBECONFIG_EMBEDDED_B64=${KUBECONFIG_EMBEDDED_B64}|" "$ENV_FILE"
         sed -i "s|^KUBECONFIG_PATH=.*|KUBECONFIG_PATH=${KUBECONFIG_PATH}|" "$ENV_FILE"
         sed -i "s|^HOST_IP=.*|HOST_IP=${HOST_IP}|" "$ENV_FILE"
         log ".env cree — REMPLIR les valeurs manquantes : nano ${ENV_FILE}"
@@ -293,7 +372,7 @@ echo ""
 echo "  VM Ubuntu IP       : ${HOST_IP}"
 echo "  Registry local     : http://${HOST_IP}:5000"
 echo "  Minikube IP        : ${MINIKUBE_IP}"
-echo "  Kubeconfig Jenkins : ${KUBECONFIG_JENKINS}"
+echo "  Kubeconfig embarque : ${KUBECONFIG_EMBEDDED}"
 echo ""
 echo "  Services systemd   : minikube + minikube-jenkins (demarrage auto)"
 echo ""
@@ -302,7 +381,7 @@ echo "  1. Completer le .env :    nano ${ENV_FILE}"
 echo "  2. Lancer la stack :      docker compose up -d"
 echo "  3. Jenkins depuis Mac :   http://${HOST_IP}:8080"
 echo "  4. Charger JCasC :        Manage Jenkins -> Configuration as Code"
-echo "  5. Uploader kubeconfig :  ${KUBECONFIG_JENKINS} -> Credentials -> Secret file"
+echo "     (credential kubeconfig-file auto-configure via KUBECONFIG_EMBEDDED_B64)"
 echo ""
 echo "  Tester le registry :"
 echo "    docker pull nginx:alpine"
