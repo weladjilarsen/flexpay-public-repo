@@ -129,6 +129,22 @@ credentials:
               id: "messaging-infobip-api-key"
               secret: "${INFOBIP_API_KEY}"
               description: "Cle API Infobip pour SMS/WhatsApp (messaging-service)"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "kyc-service-db-credentials"
+              username: "${KYC_SERVICE_DB_USERNAME:-postgres}"
+              password: "${KYC_SERVICE_DB_PASSWORD}"
+              description: "Credentials PostgreSQL pour kyc-service (flexpay_kycdb)"
+          - string:
+              scope: GLOBAL
+              id: "kyc-service-db-url"
+              secret: "${KYC_SERVICE_DB_URL}"
+              description: "JDBC URL PostgreSQL pour kyc-service"
+          - string:
+              scope: GLOBAL
+              id: "kyc-service-token"
+              secret: "${KYC_SERVICE_TOKEN}"
+              description: "Token d'authentification interne pour kyc-service"
 
 unclassified:
   scmGit:

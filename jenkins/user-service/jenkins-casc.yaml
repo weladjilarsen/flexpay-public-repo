@@ -1,0 +1,79 @@
+# ════════════════════════════════════════════════════════════════════════
+# Jenkins Configuration as Code (JCasC) — flexpay-user-service
+#
+# Credentials requises par le Jenkinsfile du user-service.
+# Ces credentials sont déclarées dans le JCasC principal
+# (jenkins/admin-server/jenkins-casc.yaml) qui est chargé au démarrage.
+#
+# Ce fichier sert de référence pour documenter ce dont le pipeline
+# user-service a besoin dans Jenkins.
+#
+# Variables d'environnement requises dans le docker-compose Jenkins :
+#   GITHUB_USER, GITHUB_TOKEN
+#   ADMIN_SERVER_USERNAME, ADMIN_SERVER_PASSWORD
+#   USER_SERVICE_DB_USERNAME, USER_SERVICE_DB_PASSWORD, USER_SERVICE_DB_URL
+#   RABBITMQ_USERNAME, RABBITMQ_PASSWORD
+#   FLEXPAY_JWT_SECRET
+#   KUBECONFIG_EMBEDDED_B64
+# ════════════════════════════════════════════════════════════════════════
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+
+          # ── GitHub (checkout du code source) ──────────────────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-credentials"
+              username: "${GITHUB_USER:-weladjilarsen}"
+              password: "${GITHUB_TOKEN:-token}"
+              description: "GitHub - acces aux repos FlexPay"
+
+          # ── Spring Boot Admin (enregistrement du service) ─────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "admin-server-credentials"
+              username: "${ADMIN_SERVER_USERNAME:-admin}"
+              password: "${ADMIN_SERVER_PASSWORD:-changeme}"
+              description: "Spring Security credentials pour admin-server"
+
+          # ── PostgreSQL user-service ────────────────────────────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "user-service-db-credentials"
+              username: "${USER_SERVICE_DB_USERNAME:-postgres}"
+              password: "${USER_SERVICE_DB_PASSWORD}"
+              description: "Credentials PostgreSQL pour user-service (flexpay_userdb)"
+
+          - string:
+              scope: GLOBAL
+              id: "user-service-db-url"
+              secret: "${USER_SERVICE_DB_URL}"
+              description: "JDBC URL PostgreSQL pour user-service"
+
+          # ── RabbitMQ (messaging async) ────────────────────────────────
+          - usernamePassword:
+              scope: GLOBAL
+              id: "rabbitmq-credentials"
+              username: "${RABBITMQ_USERNAME:-guest}"
+              password: "${RABBITMQ_PASSWORD:-guest}"
+              description: "Credentials RabbitMQ pour les microservices FlexPay"
+
+          # ── JWT (authentification tokens) ─────────────────────────────
+          - string:
+              scope: GLOBAL
+              id: "flexpay-jwt-secret"
+              secret: "${FLEXPAY_JWT_SECRET}"
+              description: "Cle secrete JWT pour la signature des tokens"
+
+          # ── Kubeconfig (deploiement K8s) ──────────────────────────────
+          # NOTE : le type 'file' est incompatible avec JCasC Jenkins 2.555.1
+          # Creer manuellement via : Manage Jenkins → Credentials → Add →
+          #   Kind: Secret file | ID: kubeconfig-file
+          # - file:
+          #     scope: GLOBAL
+          #     id: "kubeconfig-file"
+          #     fileName: "kubeconfig"
+          #     secretBytes: "${KUBECONFIG_EMBEDDED_B64}"
+          #     description: "Kubeconfig Minikube pour kubectl"

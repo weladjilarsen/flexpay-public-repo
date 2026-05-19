@@ -252,6 +252,10 @@ services:
       MAIL_FROM: ${MAIL_FROM}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME}
       INFOBIP_API_KEY: ${INFOBIP_API_KEY}
+      KYC_SERVICE_DB_USERNAME: ${KYC_SERVICE_DB_USERNAME:-postgres}
+      KYC_SERVICE_DB_PASSWORD: ${KYC_SERVICE_DB_PASSWORD}
+      KYC_SERVICE_DB_URL: ${KYC_SERVICE_DB_URL}
+      KYC_SERVICE_TOKEN: ${KYC_SERVICE_TOKEN}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/login || exit 1"]
       interval: 30s
