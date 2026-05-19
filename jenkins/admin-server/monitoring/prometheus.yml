@@ -27,22 +27,35 @@ scrape_configs:
           application: "admin-server"
           environment: "prod"
 
-  # ── FlexPay Gateway Service (K8s via NodePort) ───────────────────────
-  # Décommenter quand micrometer-registry-prometheus sera ajouté
-  # - job_name: "flexpay-gateway"
-  #   metrics_path: /actuator/prometheus
-  #   static_configs:
-  #     - targets: ["host.docker.internal:30080"]
-  #       labels:
-  #         application: "gateway-service"
+  # ── FlexPay Gateway Service (K8s via NodePort 30080) ──────────────────
+  - job_name: "flexpay-gateway"
+    metrics_path: /actuator/prometheus
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:30080"]
+        labels:
+          application: "gateway-service"
+          environment: "prod"
 
-  # ── FlexPay User Service ─────────────────────────────────────────────
-  # - job_name: "flexpay-user-service"
-  #   metrics_path: /actuator/prometheus
-  #   static_configs:
-  #     - targets: ["host.docker.internal:30001"]
-  #       labels:
-  #         application: "user-service"
+  # ── FlexPay User Service (K8s via NodePort 30001) ─────────────────────
+  - job_name: "flexpay-user-service"
+    metrics_path: /actuator/prometheus
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:30001"]
+        labels:
+          application: "user-service"
+          environment: "prod"
+
+  # ── FlexPay Messaging Service (K8s via NodePort 30004) ─────────────────
+  - job_name: "flexpay-messaging-service"
+    metrics_path: /actuator/prometheus
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:30004"]
+        labels:
+          application: "messaging-service"
+          environment: "prod"
 
   # ── FlexPay KYC Service ──────────────────────────────────────────────
   # - job_name: "flexpay-kyc-service"
