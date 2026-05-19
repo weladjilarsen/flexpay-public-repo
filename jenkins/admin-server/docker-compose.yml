@@ -151,7 +151,7 @@ services:
     container_name: prometheus
     restart: unless-stopped
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:${HOST_IP}"
     ports:
       - "9090:9090"
     volumes:
@@ -175,7 +175,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:${HOST_IP}"
     ports:
       - "3000:3000"
     environment:
