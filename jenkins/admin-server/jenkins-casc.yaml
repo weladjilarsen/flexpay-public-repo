@@ -9,17 +9,13 @@
 #   - Minikube (Docker driver) sur la meme VM
 #
 # Chargement :
-#   Manage Jenkins -> Configuration as Code -> Replace configuration
+#   Automatique au démarrage du container (via CASC_JENKINS_CONFIG)
+#   Rechargement à chaud : Manage Jenkins -> Configuration as Code -> Reload existing configuration
 #
 # APRES le chargement, configurer manuellement :
-#   1. Credential kubeconfig (Secret file) :
-#      Manage Jenkins -> Credentials -> Add -> Secret file
-#      ID : kubeconfig-file | File : kubeconfig
-#   2. Email :
-#      Manage Jenkins -> System -> Extended E-mail Notification
-#   3. Outils (Maven, JDK, Dependency-Check) :
+#   1. Outils (Maven, JDK, Dependency-Check) :
 #      Manage Jenkins -> Tools
-#   4. Job multibranch :
+#   2. Job multibranch :
 #      New Item -> Multibranch Pipeline -> flexpay-admin-server
 # ════════════════════════════════════════════════════════════════════════
 
@@ -89,8 +85,74 @@ credentials:
               username: "${ADMIN_SERVER_USERNAME:-admin}"
               password: "${ADMIN_SERVER_PASSWORD:-changeme}"
               description: "Spring Security credentials pour admin-server"
+          - string:
+              scope: GLOBAL
+              id: "flexpay-jwt-secret"
+              secret: "${FLEXPAY_JWT_SECRET}"
+              description: "Clé secrète JWT pour la signature des tokens"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "user-service-db-credentials"
+              username: "${USER_SERVICE_DB_USERNAME:-postgres}"
+              password: "${USER_SERVICE_DB_PASSWORD}"
+              description: "Credentials PostgreSQL pour user-service (flexpay_userdb)"
+          - string:
+              scope: GLOBAL
+              id: "user-service-db-url"
+              secret: "${USER_SERVICE_DB_URL}"
+              description: "JDBC URL PostgreSQL pour user-service"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "rabbitmq-credentials"
+              username: "${RABBITMQ_USERNAME:-guest}"
+              password: "${RABBITMQ_PASSWORD:-guest}"
+              description: "Credentials RabbitMQ pour les microservices FlexPay"
+          - file:
+              scope: GLOBAL
+              id: "kubeconfig-file"
+              fileName: "kubeconfig"
+              secretBytes: "${KUBECONFIG_EMBEDDED_B64}"
+              description: "Kubeconfig Minikube (certificats embarqués) pour kubectl dans les pipelines"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "messaging-mail-credentials"
+              username: "${MAIL_USERNAME}"
+              password: "${MAIL_PASSWORD}"
+              description: "SMTP Gmail - notifications pipeline FlexPay"
+          - string:
+              scope: GLOBAL
+              id: "messaging-mail-from"
+              secret: "${MAIL_FROM}"
+              description: "Adresse email d'expedition pour le messaging-service"
+          - string:
+              scope: GLOBAL
+              id: "messaging-infobip-api-key"
+              secret: "${INFOBIP_API_KEY}"
+              description: "Cle API Infobip pour SMS/WhatsApp (messaging-service)"
 
 unclassified:
   scmGit:
     globalConfigName: "Jenkins CI"
     globalConfigEmail: "ci@flexpay.com"
+
+  mailer:
+    smtpHost: "${MAIL_HOST}"
+    smtpPort: "${MAIL_PORT}"
+    useSsl: false
+    useTls: true
+    charset: "UTF-8"
+    authentication:
+      username: "${MAIL_USERNAME}"
+      password: "${MAIL_PASSWORD}"
+    replyToAddress: "${MAIL_FROM}"
+    defaultSuffix: "@flexpay.com"
+
+  email-ext:
+    defaultReplyTo: "${MAIL_FROM}"
+    defaultRecipients: "${EMAIL_RECIPIENTS}"
+    mailAccount:
+      smtpHost: "${MAIL_HOST}"
+      smtpPort: "${MAIL_PORT}"
+      useSsl: false
+      useTls: true
+      credentialsId: "messaging-mail-credentials"
