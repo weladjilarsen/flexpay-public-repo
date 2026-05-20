@@ -11,7 +11,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SERVICES=(admin-server gateway user-service kyc-service messaging-service)
+SERVICES=(admin-server gateway user-service kyc-service messaging-service payment-service)
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "ERREUR : ce script doit être exécuté en root (sudo)"

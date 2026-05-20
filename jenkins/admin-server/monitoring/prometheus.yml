@@ -67,10 +67,12 @@ scrape_configs:
           application: "kyc-service"
           environment: "prod"
 
-  # ── FlexPay Payment Service ──────────────────────────────────────────
-  # - job_name: "flexpay-payment-service"
-  #   metrics_path: /actuator/prometheus
-  #   static_configs:
-  #     - targets: ["host.docker.internal:30003"]
-  #       labels:
-  #         application: "payment-service"
+  # ── FlexPay Payment Service (K8s via NodePort 30003) ──────────────────
+  - job_name: "flexpay-payment-service"
+    metrics_path: /actuator/prometheus
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:30003"]
+        labels:
+          application: "payment-service"
+          environment: "prod"

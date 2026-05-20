@@ -145,6 +145,23 @@ credentials:
               id: "kyc-service-token"
               secret: "${KYC_SERVICE_TOKEN}"
               description: "Token d'authentification interne pour kyc-service"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "payment-service-db-credentials"
+              username: "${PAYMENT_SERVICE_DB_USERNAME:-postgres}"
+              password: "${PAYMENT_SERVICE_DB_PASSWORD}"
+              description: "Credentials PostgreSQL pour payment-service (flexpay_paymentdb)"
+          - string:
+              scope: GLOBAL
+              id: "payment-service-db-url"
+              secret: "${PAYMENT_SERVICE_DB_URL}"
+              description: "JDBC URL PostgreSQL pour payment-service"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "minio-credentials"
+              username: "${MINIO_ACCESS_KEY:-minioadmin}"
+              password: "${MINIO_SECRET_KEY:-minioadmin}"
+              description: "Credentials MinIO S3 pour le stockage KYC (flexpay-kyc bucket)"
 
 unclassified:
   scmGit:

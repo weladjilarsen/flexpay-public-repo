@@ -41,6 +41,7 @@ volumes:
   pgadmin_data:
   rabbitmq_data:
   postgres_data:
+  minio_data:
 
 # =========================
 # SERVICES
@@ -256,6 +257,11 @@ services:
       KYC_SERVICE_DB_PASSWORD: ${KYC_SERVICE_DB_PASSWORD}
       KYC_SERVICE_DB_URL: ${KYC_SERVICE_DB_URL}
       KYC_SERVICE_TOKEN: ${KYC_SERVICE_TOKEN}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      PAYMENT_SERVICE_DB_USERNAME: ${PAYMENT_SERVICE_DB_USERNAME:-postgres}
+      PAYMENT_SERVICE_DB_PASSWORD: ${PAYMENT_SERVICE_DB_PASSWORD}
+      PAYMENT_SERVICE_DB_URL: ${PAYMENT_SERVICE_DB_URL}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/login || exit 1"]
       interval: 30s
@@ -289,6 +295,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq-enabled-plugins:/etc/rabbitmq/enabled_plugins:ro
     networks:
       - frontend
       - backend
@@ -298,6 +305,42 @@ services:
       - "traefik.http.routers.rabbitmq.entrypoints=websecure"
       - "traefik.http.routers.rabbitmq.tls.certresolver=letsencrypt"
       - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+
+  # ==================================================
+  # MINIO — Object Storage (KYC documents)
+  # ==================================================
+  # API  : http://<host>:9100 (S3-compatible)
+  # Console : http://<host>:9101
+  # Bucket auto-créé par le KYC service au démarrage.
+  # ==================================================
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9101"
+    ports:
+      - "9100:9000"
+      - "9101:9101"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend
+      - minikube
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio-console.rule=Host(`minio.flexpay.com`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9101"
 
   # ==================================================
   # POSTGRESQL 18
