@@ -1,1 +1,4 @@
-kubectl logs deployment/flexpay-user-service -n flexpay-prod --tail=50
+13:21:48  + kubectl --kubeconfig=**** create namespace flexpay-prod --dry-run=client -o yaml
+13:21:48  + kubectl --kubeconfig=**** apply -f -
+13:22:56  error: error validating "STDIN": error validating data: failed to download openapi: Get "https://192.168.49.2:8443/openapi/v2?timeout=32s": dial tcp 192.168.49.2:8443: i/o timeout; if you choose to ignore these errors, turn validation off with --validate=false
+[Pipeline] }
