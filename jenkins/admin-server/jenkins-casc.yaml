@@ -162,6 +162,35 @@ credentials:
               username: "${MINIO_ACCESS_KEY:-minioadmin}"
               password: "${MINIO_SECRET_KEY:-minioadmin}"
               description: "Credentials MinIO S3 pour le stockage KYC (flexpay-kyc bucket)"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "admin-service-db-credentials"
+              username: "${ADMIN_SERVICE_DB_USERNAME:-postgres}"
+              password: "${ADMIN_SERVICE_DB_PASSWORD}"
+              description: "Credentials PostgreSQL pour admin-service (flexpay_admindb)"
+          - string:
+              scope: GLOBAL
+              id: "admin-service-db-url"
+              secret: "${ADMIN_SERVICE_DB_URL}"
+              description: "JDBC URL PostgreSQL pour admin-service"
+          - file:
+              scope: GLOBAL
+              id: "admin-jwt-private-key"
+              fileName: "admin-jwt-private-key.pem"
+              secretBytes: "${ADMIN_JWT_PRIVATE_KEY_PATH}"
+              description: "Admin JWT private key for admin service"
+          - file:
+              scope: GLOBAL
+              id: "admin-jwt-public-key"
+              fileName: "admin-jwt-public-key.pem"
+              secretBytes: "${ADMIN_JWT_PUBLIC_KEY_PATH}"
+              description: "Admin JWT public key for admin service"
+          - string:
+              scope: GLOBAL
+              id: "admin-encryption-key"
+              secret: "${ADMIN_ENCRYPTION_KEY}"
+              description: "Encryption key for admin service"
+
 
 unclassified:
   scmGit:
