@@ -10,6 +10,7 @@
 #   systemctl enable --now flexpay-port-forward@user-service
 #   systemctl enable --now flexpay-port-forward@kyc-service
 #   systemctl enable --now flexpay-port-forward@messaging-service
+#   systemctl enable --now flexpay-port-forward@admin-service
 # ════════════════════════════════════════════════════════════════════════
 
 [Unit]
