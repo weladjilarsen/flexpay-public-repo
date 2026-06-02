@@ -1,38 +1,27 @@
-ipeline] sh
-10:06:38  + docker exec ansible ansible-playbook /ansible/playbooks/deploy-vm-microservice.yml -e service_name=flexpay-admin-server -e service_port=30090 -e host_ip=100.67.178.90 -e jar_staging_path=/opt/flexpay/deploy-staging/flexpay-admin-server/app.jar -e admin_server_username=admin -e admin_server_password=**** -e image_tag=61 -e git_commit=2251802 -v
-10:06:56  Using /ansible/ansible.cfg as config file
-10:06:56  
-10:06:56  PLAY [Deploy flexpay-admin-server on VM] ***************************************
-10:06:56  
-10:06:56  TASK [Gathering Facts] *********************************************************
-10:06:56  [WARNING]: Host 'vm-host' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.20/reference_appendices/interpreter_discovery.html for more information.
-10:06:56  [ERROR]: Task failed: Action failed: The following modules failed to execute: ansible.legacy.setup.
-10:06:56  
-10:06:56  Task failed: Action failed.
-10:06:56  
-10:06:56  <<< caused by >>>
-10:06:56  
-10:06:56  The following modules failed to execute: ansible.legacy.setup.
-10:06:56  
-10:06:56  +--[ Sub-Event 1 of 1 ]---
-10:06:56  | 
-10:06:56  | Module result deserialization failed: No start of json char found See stdout/stderr for the returned output.
-10:06:56  | 
-10:06:56  +--[ End Sub-Event ]---
-10:06:56  
-10:06:56  fatal: [vm-host]: FAILED! => {"ansible_facts": {}, "changed": false, "failed_modules": {"ansible.legacy.setup": {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.14"}, "exception": "(traceback unavailable)", "failed": true, "module_stderr": "Shared connection to 100.67.178.90 closed.\r\n", "module_stdout": "sudo: interactive authentication is required\r\n", "msg": "Module result deserialization failed: No start of json char found", "rc": 1}}, "msg": "The following modules failed to execute: ansible.legacy.setup."}
-10:06:56  
-10:06:56  PLAY RECAP *********************************************************************
-10:06:56  vm-host                    : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
-10:06:56  
-[Pipeline] }
-[Pipeline] // withEnv
-[Pipeline] }
-[Pipeline] // withCredentials
-[Pipeline] }
-[Pipeline] // stage
-[Pipeline] stage
-[Pipeline] { (Smoke Test)
-Stage "Smoke Test" skipped due to earlier failure(s)
-[Pipeline] getContext
-[Pipeline] }
+10:49:43  TASK [microservice : Validate required variables] ******************************
+10:49:43  ok: [vm-host] => {
+10:49:43      "changed": false,
+10:49:43      "msg": "All assertions passed"
+10:49:43  }
+10:49:43  
+10:49:43  TASK [microservice : Ensure Java 21 is installed] ******************************
+10:51:49  [WARNING]: Failed to update cache after 1 retries due to W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file., retrying
+10:51:49  [WARNING]: Sleeping for 1 seconds, before attempting to refresh the cache again
+10:51:49  [WARNING]: Failed to update cache after 2 retries due to W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., retrying
+10:51:49  [WARNING]: Sleeping for 2 seconds, before attempting to refresh the cache again
+10:51:49  [WARNING]: Failed to update cache after 3 retries due to W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file., retrying
+10:51:49  [WARNING]: Sleeping for 4 seconds, before attempting to refresh the cache again
+10:51:49  [WARNING]: Failed to update cache after 4 retries due to W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file., retrying
+10:51:49  [WARNING]: Sleeping for 8 seconds, before attempting to refresh the cache again
+10:51:49  [WARNING]: Failed to update cache after 5 retries due to W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file., retrying
+10:51:49  [WARNING]: Sleeping for 12 seconds, before attempting to refresh the cache again
+10:51:49  [ERROR]: Task failed: Module failed: Failed to update apt cache after 5 retries: W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file.
+10:51:49  Origin: /ansible/roles/microservice/tasks/main.yml:10:3
+10:51:49  
+10:51:49   8     fail_msg: "Required: service_name, service_port, jar_staging_path"
+10:51:49   9
+10:51:49  10 - name: Ensure Java 21 is installed
+10:51:49       ^ column 3
+10:51:49  
+10:51:49  fatal: [vm-host]: FAILED! => {"changed": false, "msg": "Failed to update apt cache after 5 retries: W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:OpenPGP signature verification failed: https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease: Les signatures suivantes n'ont pas pu être vérifiées car la clé publique n'est pas disponible : NO_PUBKEY 7FCC7D46ACCC4CF8, E:The repository 'https://apt.postgresql.org/pub/repos/apt resolute-pgdg InRelease' is not signed., W:Updating from such a repository can't be done securely, and is therefore disabled by default., W:See apt-secure(8) manpage for repository creation and user configuration details., W:Skipping acquire of configured file 'main/binary-i386/Packages' as repository 'https://dl.google.com/linux/chrome-stable/deb stable InRelease' doesn't support architecture 'i386', W:Repositories should provide a clear-signed InRelease file, but none found at https://pkg.jenkins.io/debian-stable/binary/InRelease., W:Repositories should provide a clear-signed InRelease file, but none found at https://packagecloud.io/rabbitmq/erlang/ubuntu/dists/noble/InRelease., E:The repository 'https://packagecloud.io/rabbitmq/erlang/ubuntu noble Release' does not have a Release file."}
+10:51:49  
