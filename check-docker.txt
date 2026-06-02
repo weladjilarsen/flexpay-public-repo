@@ -1,4 +1,19 @@
-13:21:48  + kubectl --kubeconfig=**** create namespace flexpay-prod --dry-run=client -o yaml
-13:21:48  + kubectl --kubeconfig=**** apply -f -
-13:22:56  error: error validating "STDIN": error validating data: failed to download openapi: Get "https://192.168.49.2:8443/openapi/v2?timeout=32s": dial tcp 192.168.49.2:8443: i/o timeout; if you choose to ignore these errors, turn validation off with --validate=false
+Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
+09:59:33  + docker exec ansible ansible-playbook /ansible/playbooks/deploy-vm-microservice.yml -e service_name=flexpay-admin-server -e service_port=30090 -e host_ip=100.67.178.90 -e jar_staging_path=/opt/flexpay/deploy-staging/flexpay-admin-server/app.jar -e admin_server_username=admin -e admin_server_password=**** -e image_tag=59 -e git_commit=2251802 -v
+09:59:54  No config file found; using defaults
+09:59:54  [ERROR]: the role 'microservice' was not found in /ansible/playbooks/roles:/root/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:/ansible/playbooks
+09:59:54  Origin: /ansible/playbooks/deploy-vm-microservice.yml:38:7
+09:59:54  
+09:59:54  36
+09:59:54  37   roles:
+09:59:54  38     - role: microservice
+09:59:54           ^ column 7
+09:59:54  
 [Pipeline] }
+[Pipeline] // withEnv
