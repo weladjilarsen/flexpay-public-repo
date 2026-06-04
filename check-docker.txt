@@ -1,5 +1,5 @@
-2026-06-02 16:16:58.888 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR c.f.m.l.NotificationEventListener - Email event NACK | eventId=kyc.submitted.08e0500f-b776-4712-8ceb-bf28eb78587d.1780417017452 type=KYC_SUBMITTED to=weladjilarsen@gmail.com error=Échec d'envoi de l'e-mail à weladjilarsen@gmail.com : Authentication failed
-2026-06-02 16:16:58.886 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR c.f.m.service.impl.EmailServiceImpl - Failed to send email | to=weladjilarsen@gmail.com template=kyc-status error=Authentication failed
+2026-06-04 11:43:14.740 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR c.f.m.l.NotificationEventListener - Email event NACK | eventId=kyc.submitted.f0a868db-9f00-4d4b-8c03-fde50be0836e.1780573388315 type=KYC_SUBMITTED to=weladjilarsen@gmail.com error=Échec d'envoi de l'e-mail à weladjilarsen@gmail.com : Authentication failed
+2026-06-04 11:43:14.489 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR c.f.m.service.impl.EmailServiceImpl - Failed to send email | to=weladjilarsen@gmail.com template=kyc-status error=Authentication failed
 org.springframework.mail.MailAuthenticationException: Authentication failed
 	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402)
 	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350)
@@ -27,7 +27,7 @@ org.springframework.mail.MailAuthenticationException: Authentication failed
 	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1331)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
 Caused by: jakarta.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. For more information, go to
-535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-4601f2dcbe3sm3556f8f.8 - gsmtp
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-490bc3918d7sm55669825e9.2 - gsmtp
 
 	at org.eclipse.angus.mail.smtp.SMTPTransport$Authenticator.authenticate(SMTPTransport.java:954)
 	at org.eclipse.angus.mail.smtp.SMTPTransport.authenticate(SMTPTransport.java:865)
